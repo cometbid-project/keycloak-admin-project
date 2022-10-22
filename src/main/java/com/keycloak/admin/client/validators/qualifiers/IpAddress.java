@@ -1,0 +1,37 @@
+/**
+ * 
+ */
+package com.keycloak.admin.client.validators.qualifiers;
+
+/**
+ * @author Gbenga
+ *
+ */
+import java.lang.annotation.Documented;
+import static java.lang.annotation.ElementType.FIELD;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
+import javax.validation.Constraint;
+import javax.validation.Payload;
+
+import com.keycloak.admin.client.validators.IpAddressValidator;
+
+/**
+ * 
+ * @author Gbenga
+ *
+ */
+@Target({ FIELD })
+@Retention(RUNTIME)
+@Constraint(validatedBy = IpAddressValidator.class)
+@Documented
+public @interface IpAddress {
+
+	String message() default "invalid IP address";
+
+	Class<?>[] groups() default {};
+
+	Class<? extends Payload>[] payload() default {};
+
+}

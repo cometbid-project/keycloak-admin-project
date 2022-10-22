@@ -1,0 +1,187 @@
+spring:
+  application.name: keycloak-admin-client
+  lifecycle.timeout-per-shutdown-phase: 1m
+  jackson:
+    default-property-inclusion: non-default
+    serialization:
+      indent-output: true
+  redis:
+    host: localhost
+    port: 6379
+    #username: redis
+    #password: sOmE_sEcUrE_pAsS
+    #ssl: false
+  main:
+    web-application-type: reactive
+    allow-bean-definition-overriding: true
+  devtools:
+    restart:
+      exclude: static/**, public/**
+      enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: admin-client
+            client-secret: df26d9d0-09e7-491f-b9a2-3a54535a48e8
+            scope: openid, profile, email, roles      
+         
+server:
+  port: 8082
+  shutdown: graceful
+  http2:
+    enabled: true
+  ssl:
+    key-store-type: PKCS12
+    key-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-keystore.p12
+    key-store-password: cometbid123
+    key-alias: gateway-server    
+    key-password: cometbid123
+    trust-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-trustStore.p12
+    trust-store-password: cometbid123
+    client-auth: none
+    protocol: TLS
+    enabled-protocols:
+    - TLSv1.2
+    enabled: true
+
+server.error.include-message: always
+server.error.include-stacktrace: never
+
+app.auth.tokenSecret: 926D96C90030DD58429D2751AC1BDBBC
+app.auth.tokenExpirationMsec: 864000000
+
+geo.ip.lib.enabled: false
+app.auth.emailVerification.path: /v1/auth/emailVerification
+app.auth.changePassword.path: /v1/auth/changePassword
+app.auth.enableLocation.path: /v1/auth/enableNewLoc
+              
+springdoc:
+  # swagger-ui custom path
+  swagger-ui:
+    path: /v1/api-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    enabled: true
+    
+  # /api-docs endpoint custom path
+  api-docs:
+    path: /v1/api-docs
+    enabled: true
+    # Packages to include
+    groups:
+      enabled: true 
+  packagesToScan: com.keycloak.admin.client.controllers
+  pathsToMatch: /v1/**
+  
+  
+local.server.apidoc.url: https://service-name/v1/api-ui.html
+test.server.apidoc.url: https://service-name/v1/api-ui.html
+
+api:
+  common:
+    version: 1.0.0    
+    documentation: http://springdoc.org
+    help: https://affinitylive.jira.com/wiki/display/APIS/Status+Codes#
+    reportError: https://dummypage.sendreport.com
+    title: Cometbid Sample API
+    description: Description of the API...
+    termsOfService: MY TERMS OF SERVICE
+    license: Apache 2.0
+    licenseUrl: http://springdoc.org
+
+    externalDocDesc: SpringShop Wiki Documentation
+    externalDocUrl: https://springshop.wiki.github.org/docs
+    contact:
+      name: NAME OF CONTACT
+      url: URL TO CONTACT
+      email: contact@mail.com
+
+  responseCodes:
+    ok.description: OK(Success)
+    created.description: Resource Created
+    badRequest.description: Bad Request due to invalid format of the request. See response message for more information
+    unauthorized.description: Unauthorized
+    forbidden.description: Forbidden
+    server.error.description: Server Failure
+    notFound.description: Not found, the specified id does not exist
+    conflict.description: Resource conflict, similar resource already exist
+    server.unavalable.description: Service Unavailable
+    unprocessableEntity.description: Unprocessable entity, input parameters caused the processing to fail. See response message for more information
+
+  product-composite:
+    get-composite-product:
+      description: Returns a composite view of the specified product id
+      notes: |
+        # Normal response
+        If the requested product id is found the method will return information regarding:
+        1. Base product information
+        1. Reviews
+        1. Recommendations
+        1. Service Addresses\n(technical information regarding the addresses of the microservices that created the response)
+        # Expected partial and error responses
+        In the following cases, only a partial response be created (used to simplify testing of error conditions)
+        ## Product id 113
+        200 - Ok, but no recommendations will be returned
+        ## Product id 213
+        200 - Ok, but no reviews will be returned
+        ## Non numerical product id
+        400 - A **Bad Request** error will be returned
+        ## Product id 13
+        404 - A **Not Found** error will be returned
+        ## Negative product ids
+        422 - An **Unprocessable Entity** error will be returned
+
+
+#spring.redis.host: localhost
+#spring.redis.port: 6379
+#spring.redis.username: redis
+#spring.redis.password: sOmE_sEcUrE_pAsS
+#spring.redis.ssl: false
+#spring.redis.lettuce.cluster.refresh.adaptive=
+#spring.redis.lettuce.cluster.refresh.dynamic-refresh-sources=
+#spring.redis.lettuce.cluster.refresh.period=
+#spring.redis.lettuce.pool.max-active=
+#spring.redis.lettuce.pool.max-idle=
+#spring.redis.lettuce.pool.max-wait=
+#spring.redis.lettuce.pool.min-idle=
+#spring.redis.lettuce.pool.time-between-eviction-runs=
+#spring.redis.lettuce.shutdown-timeout=
+
+    
+logging:
+  level:
+    web: DEBUG
+    root: INFO
+    com.cometbid.oauth2: DEBUG
+    org.springframework.security.*: trace
+    org.springframework: INFO
+
+
+totp.secret.length: 128
+totp.code.length: 8
+totp.time.period: 15
+totp.time.discrepancy: 2
+totp.qrCode.issuer: Cometbid.com
+totp.session.ttl: 1800
+password.reset.session.ttl: 1800
+pricing.plan.token.ttl: 1800
+
+
+#management.endpoints.web.exposure.include=*
+management.endpoints.web.exposure.include: health, info, metrics
+management.endpoints.web.base-path: /manage
+
+reactive.thread.maximum-pool-size: 20
+async.worker.capacity:
+async.worker.size:
+async.worker.max_size:
+async.worker.thread.await_time:
+async.worker.aliveTime:
+async.worker.thread.sleepTime.max:
+event.worker.capacity:
+event.worker.size:
+event.worker.max_size:
+
+       
