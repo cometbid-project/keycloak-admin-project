@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PreDestroy;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -37,6 +38,7 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.spi.ExecutorServiceProvider;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 
 //import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 //import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -64,7 +66,8 @@ public class KeycloakConfig {
 		String clientSecret = keycloakProperties.getAdminClientSecret();
 		String serverUrl = keycloakProperties.getAuthServerUrl();
 		String realm = keycloakProperties.getAppRealm();
-
+		
+		Integer connectionPoolSize = keycloakProperties.getConnectionPoolSize();
 		Integer readTimeoutInMillis = keycloakProperties.getReadTimeoutInMillis();
 		Integer connectTimeoutInMillis = keycloakProperties.getConnectTimeoutInMillis();
 		Integer connectionTTLInSecs = keycloakProperties.getConnectTTLInSeconds();
@@ -72,7 +75,10 @@ public class KeycloakConfig {
 
 		final SSLContext sslContext = createSslContext(keycloakSslProps);
 
-		final ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+		//final ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+		final ClientBuilder clientBuilder = new ResteasyClientBuilder()
+								.connectionPoolSize(connectionPoolSize); 
+		
 		if (sslContext != null) {
 			clientBuilder.sslContext(sslContext);
 		}
@@ -89,7 +95,7 @@ public class KeycloakConfig {
 		resteasyClient.register(new MyExecutorServiceProvider());
 
 		// Get keycloak client
-		Keycloak kc = KeycloakBuilder.builder()
+		Keycloak keycloak = KeycloakBuilder.builder()
 				//
 				.serverUrl(serverUrl)
 				//
@@ -104,7 +110,7 @@ public class KeycloakConfig {
 				.resteasyClient(resteasyClient)
 				.build();
 
-		return kc;
+		return keycloak;
 	}
 
 	
@@ -200,6 +206,11 @@ public class KeycloakConfig {
 
 		instance.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 		return instance;
+	}
+	
+	@PreDestroy
+	public void closeKeycloak(Keycloak keycloak) {
+		keycloak.close();
 	}
 	
 }

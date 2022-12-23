@@ -10,11 +10,11 @@ import lombok.Value;
  *
  */
 @Value
-public class CustomAuthenticationDetails {
+public class AuthenticationDetails {
 
 	private String subscriptionType;
 	
-	public CustomAuthenticationDetails() {
+	public AuthenticationDetails() {
 		this.subscriptionType = null;
 	}
 

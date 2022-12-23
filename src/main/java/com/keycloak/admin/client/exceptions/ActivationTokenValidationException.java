@@ -58,6 +58,15 @@ public class ActivationTokenValidationException extends ApplicationDefinedRuntim
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE;
+		return ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 }

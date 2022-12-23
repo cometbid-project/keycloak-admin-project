@@ -22,7 +22,10 @@ import com.keycloak.admin.client.oauth.service.GroupServiceImpl;
 import com.keycloak.admin.client.oauth.service.it.GroupService;
 import com.keycloak.admin.client.response.model.AppResponse;
 
+import org.reactivestreams.Publisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -44,7 +47,7 @@ import reactor.core.publisher.Mono;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/groups")
+@RequestMapping(value = "groups/v1")
 @Tag(name = "Realm Group", description = "API for Realm Groups information.")
 @SecurityScheme(name = "Bearer Token Authentication", type = SecuritySchemeType.HTTP, scheme = "token")
 public class GroupController {
@@ -58,8 +61,9 @@ public class GroupController {
 	@Operation(summary = "List all realm groups", security = @SecurityRequirement(name = "Bearer token Authentication"), tags = {
 			"find", "groups", "realm" })
 
-	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "${api.responseCodes.ok.description} Realm groups found", content = {
-			@Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = GroupVO.class, description = "the realm groups details"))) }),
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "${api.responseCodes.ok.description} Realm groups found", content = {
+					@Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = GroupVO.class, description = "the realm groups details"))) }),
 			@ApiResponse(responseCode = "400", description = "${api.responseCodes.badRequest.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "401", description = "${api.responseCodes.unauthorized.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "403", description = "${api.responseCodes.forbidden.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
@@ -68,7 +72,7 @@ public class GroupController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/")
-	public Flux<GroupVO> findAllRealmGroup() {
+	public Publisher<GroupVO> findAllRealmGroup() {
 
 		return groupService.findAllRealmGroups();
 	}
@@ -92,9 +96,9 @@ public class GroupController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping(value = "/")
-	public Mono<GroupVO> createRealmGroup(@RequestBody @Valid CreateGroupRequest groupRequest) {
+	public Publisher<ResponseEntity<GroupVO>> createRealmGroup(@RequestBody @Valid CreateGroupRequest groupRequest) {
 
-		return groupService.createRealmGroup(groupRequest);
+		return groupService.createRealmGroup(groupRequest).map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -115,10 +119,10 @@ public class GroupController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/{id}")
-	public Mono<GroupVO> findRealmGroup(
+	public Publisher<ResponseEntity<GroupVO>> findRealmGroup(
 			@Parameter(description = "id of realm group to be searched") @PathVariable("id") @NotBlank String groupId) {
 
-		return groupService.findRealmGroupById(groupId);
+		return groupService.findRealmGroupById(groupId).map(response -> ResponseEntity.ok(response));
 	}
 
 }

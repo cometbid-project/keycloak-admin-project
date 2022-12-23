@@ -14,7 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
@@ -37,6 +39,7 @@ import lombok.extern.log4j.Log4j2;
  */
 @Log4j2
 @Component
+@PropertySource(value = "classpath:application.yml", factory = YamlPropertySourceFactory.class)
 public class ResponseCreator {
 
 	@Value("${api.common.version}")
@@ -53,7 +56,6 @@ public class ResponseCreator {
 	 * @param <T>
 	 * @param profiles
 	 * @param type
-	 * @param responseCookie
 	 * @param headerFields
 	 * @param r
 	 * @return
@@ -61,38 +63,7 @@ public class ResponseCreator {
 	public <T> Mono<ServerResponse> defaultReadMultiAuthResponse(Flux<T> profiles, Class<? extends T> type,
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
-
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.FOUND);
-
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-			Mono<List<T>> monoList = profiles.collectList();
-
-			@SuppressWarnings("unchecked")
-			Mono<ObjectWithList<T>> xmlResult = monoList.map(list -> {
-				ObjectWithList<T> authList = new ObjectWithList<T>();
-				authList.setList(list);
-
-				ObjectWithList<T> output = XmlStreamConverterUtil.fromListModeltoXml(authList, ObjectWithList.class,
-						type);
-
-				return output;
-			});
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, ObjectWithList.class);
-		} else {
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(profiles, type);
-		}
+		return buildMultiResponse(profiles, type, HttpStatus.FOUND, headerFields, r);
 	}
 
 	/**
@@ -108,30 +79,12 @@ public class ResponseCreator {
 	public <T> Mono<ServerResponse> defaultReadResponse(Mono<T> profiles, Class<? extends T> type,
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
-
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.FOUND);
-
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-
-			Mono<String> xmlResult = profiles
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, type)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(profiles, type);
-
-		}
+		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.FOUND).headers(headers -> {
+			if (!MapUtils.isEmpty(headerFields)) {
+				headers.putAll(headerFields);
+			}
+		});
+		return buildSingleResponse(responseBuilder, r).body(profiles, type);
 	}
 
 	/**
@@ -147,30 +100,7 @@ public class ResponseCreator {
 	public <T> Mono<ServerResponse> defaultAcceptedReadResponse(Mono<T> profiles, Class<? extends T> type,
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
-
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.accepted();
-
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-
-			Mono<String> xmlResult = profiles
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, type)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(profiles, type);
-
-		}
+		return buildSingleResponse(ServerResponse.accepted(), r).body(profiles, type);
 	}
 
 	/**
@@ -183,33 +113,16 @@ public class ResponseCreator {
 	 * @param r
 	 * @return
 	 */
-	public <T> Mono<ServerResponse> defaultWriteResponse(Mono<T> profiles, Class<? extends T> type, String identifier,
-			Map<String, List<String>> headerFields, ServerRequest r) {
+	public <T> Mono<ServerResponse> defaultWriteResponse(Mono<T> profiles, Class<T> type,
+			Map<String, List<String>> headerFields, URI uri, ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
+		ServerResponse.BodyBuilder responseBuilder = ServerResponse.created(uri).headers(headers -> {
+			if (!MapUtils.isEmpty(headerFields)) {
+				headers.putAll(headerFields);
+			}
+		});
 
-		URI uri = UriComponentsBuilder.fromPath(r.path() + "/{username}").buildAndExpand(identifier).toUri();
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.created(uri);
-
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-
-			Mono<String> xmlResult = profiles
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, type)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(profiles, type);
-		}
+		return buildSingleResponse(responseBuilder, r).body(profiles, type);
 	}
 
 	/**
@@ -223,36 +136,17 @@ public class ResponseCreator {
 	public Mono<ServerResponse> createAcceptedMessageResponse(String message, Map<String, List<String>> headerFields,
 			ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
-
 		ApiMessage apiMessage = ApiMessage.builder().httpStatus(HttpStatus.ACCEPTED).message(message).path(r.path())
 				.debugMessage(getMessage("accepted.detail.message"))
 				.timestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString())
 				.responseTyp(ResponseType.SUCCESS).build();
-		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("email.notification.step"));
+		
+		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("success.message"));
 
 		AppResponse appResponse = new AppResponse(apiVersion, "", apiMessage, HttpStatus.ACCEPTED.toString(),
 				apiInfoUrl);
 
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.accepted();
-
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-			Mono<String> xmlResult = Mono.just(appResponse)
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, AppResponse.class)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(Mono.just(appResponse), AppResponse.class);
-		}
+		return buildSingleResponse(ServerResponse.accepted(), r).body(Mono.just(appResponse), AppResponse.class);
 	}
 
 	/**
@@ -266,14 +160,11 @@ public class ResponseCreator {
 	public Mono<ServerResponse> createSuccessMessageResponse(String message, ResponseCookie responseCookie,
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
-
 		ApiMessage apiMessage = ApiMessage.builder().httpStatus(HttpStatus.OK).message(message).path(r.path())
 				.timestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString())
 				.debugMessage(getMessage("success.detail.message")).responseTyp(ResponseType.SUCCESS).build();
 
-		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("email.notification.step"));
+		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("success.message"));
 
 		AppResponse appResponse = new AppResponse(apiVersion, "", apiMessage, HttpStatus.OK.toString(), apiInfoUrl);
 
@@ -283,22 +174,7 @@ public class ResponseCreator {
 			}
 		});
 
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-			Mono<String> xmlResult = Mono.just(appResponse)
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, AppResponse.class)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(Mono.just(appResponse), AppResponse.class);
-		}
+		return buildSingleResponse(responseBuilder, r).body(Mono.just(appResponse), AppResponse.class);
 	}
 
 	/**
@@ -312,9 +188,6 @@ public class ResponseCreator {
 	 */
 	public Mono<ServerResponse> createErrorMessageResponse(String message, HttpStatus httpStatus,
 			ResponseCookie responseCookie, Map<String, List<String>> headerFields, ServerRequest r) {
-
-		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
-		log.info("Response MediaType {}", mediaType);
 
 		ApiError apiError = ApiError.builder().status(httpStatus.value()).message(message).path(r.path())
 				.debugMessage(getMessage("error.detail.message"))
@@ -331,22 +204,7 @@ public class ResponseCreator {
 			}
 		});
 
-		if (mediaType.contains(MediaType.APPLICATION_XML)) {
-			Mono<String> xmlResult = Mono.just(appResponse)
-					.flatMap(m -> Mono.justOrEmpty(XmlStreamConverterUtil.fromModeltoXml(m, AppResponse.class)));
-
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_XML).body(xmlResult, String.class);
-		} else {
-			return responseBuilder.headers(headers -> {
-				if (headerFields != null) {
-					headers.putAll(headerFields);
-				}
-			}).contentType(MediaType.APPLICATION_JSON).body(Mono.just(appResponse), AppResponse.class);
-		}
+		return buildSingleResponse(responseBuilder, r).body(Mono.just(appResponse), AppResponse.class);
 	}
 
 	/**
@@ -364,12 +222,64 @@ public class ResponseCreator {
 				.timestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString())
 				.debugMessage(getMessage("success.detail.message")).responseTyp(ResponseType.SUCCESS).build();
 
-		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("email.notification.step"));
+		apiMessage.add(path(r), ResponseType.SUCCESS.toString(), getMessage("success.message"));
 
 		return new AppResponse(apiVersion, "", apiMessage, HttpStatus.OK.toString(), apiInfoUrl);
-
 	}
 
+// =================================================================================================================
+
+	private <T> Mono<ServerResponse> buildMultiResponse(Flux<T> profiles, Class<? extends T> type, HttpStatus status,
+			Map<String, List<String>> headerFields, ServerRequest r) {
+
+		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
+		log.info("Response MediaType {}", mediaType);
+
+		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.FOUND).headers(headers -> {
+			if (!MapUtils.isEmpty(headerFields)) {
+				headers.putAll(headerFields);
+			}
+		});
+
+		if (mediaType.contains(MediaType.APPLICATION_XML)) {
+			Mono<ObjectWithList<T>> result = wrapToCollection(profiles, type);
+
+			return responseBuilder.contentType(MediaType.APPLICATION_XML).body(result, ObjectWithList.class);
+		} else {
+			return responseBuilder.contentType(MediaType.APPLICATION_JSON).body(profiles, type);
+		}
+	}
+
+	private ServerResponse.BodyBuilder buildSingleResponse(ServerResponse.BodyBuilder responseBuilder,
+			ServerRequest r) {
+
+		List<MediaType> mediaType = r.exchange().getRequest().getHeaders().getAccept();
+		log.info("Response MediaType {}", mediaType);
+
+		if (mediaType.contains(MediaType.APPLICATION_XML)) {
+			responseBuilder.contentType(MediaType.APPLICATION_XML);
+		} else {
+			responseBuilder.contentType(MediaType.APPLICATION_JSON);
+		}
+
+		return responseBuilder;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> Mono<ObjectWithList<T>> wrapToCollection(Flux<T> profiles, Class<? extends T> type) {
+
+		Mono<List<T>> monoList = profiles.collectList();
+
+		return monoList.map(list -> {
+			ObjectWithList<T> authList = new ObjectWithList<T>();
+			authList.setList(list);
+
+			return authList;
+		});
+	}
+
+// =======================================================================================================
+	
 	private static String uri(ServerRequest r) {
 		return UriComponentsBuilder.fromPath(r.path()).build().toUriString();
 	}

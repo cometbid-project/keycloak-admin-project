@@ -34,7 +34,7 @@ public class RoleBuilder {
 
 	private Faker faker;
 
-	private UUID id = UUID.randomUUID();
+	private UUID id;
 
 	private String name;
 
@@ -45,9 +45,10 @@ public class RoleBuilder {
 	private RoleBuilder() {
 
 		faker = new Faker();
-		
+
+		this.id = UUID.randomUUID();
 		this.name = getRandomRole().getName();
-		this.description = faker.lorem().sentence();
+		this.description = faker.lorem().sentence(1);
 	}
 
 	public static RoleBuilder role() {
@@ -74,14 +75,14 @@ public class RoleBuilder {
 		return this;
 	}
 
-	public RoleVO roleVo(UUID id) {
+	public RoleVO roleVo() {
 
-		return RoleVO.builder().id(id.toString()).name(this.name).description(this.description)
+		return RoleVO.builder().id(id == null ? null : id.toString()).name(this.name).description(this.description)
 				.attributes(this.attributes).build();
 	}
 
 	public CreateRoleRequest build() {
-		return new CreateRoleRequest(this.name);
+		return new CreateRoleRequest(this.name, this.description);
 	}
 
 	public static Role getRandomRole() {
@@ -138,8 +139,7 @@ public class RoleBuilder {
 		List<String> arrayList = List.copyOf(setOfRoles);
 
 		return arrayList.stream()
-				.map(roleName -> RoleBuilder.role().withName(roleName)
-						.roleRepresentation(UUID.randomUUID(), false))
+				.map(roleName -> RoleBuilder.role().withName(roleName).roleRepresentation(UUID.randomUUID(), false))
 				.collect(Collectors.toList());
 	}
 

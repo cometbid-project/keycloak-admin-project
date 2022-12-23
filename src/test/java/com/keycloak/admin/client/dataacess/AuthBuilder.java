@@ -3,14 +3,21 @@
  */
 package com.keycloak.admin.client.dataacess;
 
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.List;
-import java.util.UUID;
 
 import com.github.javafaker.Faker;
-import com.keycloak.admin.client.common.enums.Role;
+import com.keycloak.admin.client.common.enums.SendModeType;
+import com.keycloak.admin.client.common.enums.StatusType;
+import com.keycloak.admin.client.common.utils.RandomGenerator;
+import com.keycloak.admin.client.entities.ActivationToken;
+import com.keycloak.admin.client.models.ActivationTokenModel;
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
+import com.keycloak.admin.client.models.LogoutRequest;
+import com.keycloak.admin.client.models.SendOtpRequest;
+import com.keycloak.admin.client.models.TotpRequest;
 import com.keycloak.admin.client.models.UserVO;
 
 import lombok.Data;
@@ -25,9 +32,9 @@ public class AuthBuilder {
 	private String token = "{}";
 
 	private String username;
-	
+
 	private Faker faker;
-	
+
 	private List<String> roles;
 
 	private String secret;
@@ -43,22 +50,22 @@ public class AuthBuilder {
 	private Long refreshExpiresIn;
 
 	private AuthBuilder(UserVO user) {
-		faker  = new Faker();	
-		
-		this.secret = faker.internet().password();		
+		faker = new Faker();
+
+		this.secret = faker.internet().password();
 		this.totpSessionId = faker.internet().uuid();
-		
+
 		Calendar nowPlusMins = Calendar.getInstance();
-		nowPlusMins.add(Calendar.MINUTE, 30);		
+		nowPlusMins.add(Calendar.MINUTE, 30);
 		this.expiresIn = nowPlusMins.getTimeInMillis();
-		
+
 		Calendar nowPlusHrs = Calendar.getInstance();
-		nowPlusHrs.add(Calendar.HOUR, 24);		
+		nowPlusHrs.add(Calendar.HOUR, 24);
 		this.refreshExpiresIn = nowPlusHrs.getTimeInMillis();
-	
+
 		this.accessToken = JwtUtil.instance().generateToken(user);
 		this.refreshToken = JwtUtil.instance().generateToken(user);
-		
+
 		this.username = user.getUsername();
 		this.roles = List.copyOf(user.getRoles());
 	}
@@ -106,22 +113,41 @@ public class AuthBuilder {
 		this.roles = roles;
 		return this;
 	}
-	
+
 	public String token() {
 		return token;
 	}
 
 	public AuthenticationResponse authResponse() {
 
-		return AuthenticationResponse.builder().username(this.username)
-				.roles(this.roles).accessToken(this.accessToken)
-				.refreshToken(this.refreshToken).expiresIn(this.expiresIn)
-				.refreshExpiresIn(this.refreshExpiresIn).secret(this.secret).build();
+		return AuthenticationResponse.builder().username(this.username).roles(this.roles).accessToken(this.accessToken)
+				.refreshToken(this.refreshToken).expiresIn(this.expiresIn).refreshExpiresIn(this.refreshExpiresIn)
+				.secret(this.secret).build();
 	}
 
 	public AuthenticationRequest build() {
 		String password = faker.internet().password();
 		return new AuthenticationRequest(this.username, password);
 	}
-	
+
+	public TotpRequest buildTotpRequest(boolean nullTotp, boolean nullTotpSession) {
+		final String totpSessionId = nullTotpSession ? null : RandomGenerator.generateSessionId();
+		String totpCode = nullTotp ? null : Faker.instance().number().digits(6); // 6 digit code
+		return new TotpRequest(totpCode, totpSessionId);
+	}
+
+	public SendOtpRequest buildOtpRequest(boolean nullOtpSession, boolean nullMode) {
+		final String totpSessionId = nullOtpSession ? null : RandomGenerator.generateSessionId();
+		String otpMode = nullMode ? "UNKNOWN" : SendModeType.EMAIL.toString(); // 6 digit code
+		return new SendOtpRequest(totpSessionId, otpMode);
+	}
+
+	public LogoutRequest logoutRequest() {
+		return new LogoutRequest(this.refreshToken);
+	}
+
+	public ActivationTokenModel buildActivationToken() {
+		return ActivationTokenModel.builder().username(this.username).token(this.accessToken).build();
+	}
+
 }

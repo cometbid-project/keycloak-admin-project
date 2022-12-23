@@ -12,8 +12,6 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.env.Environment;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -135,7 +133,6 @@ public class CommonUtil {
 	}
 
 	private Mono<String> taken(String newToken) {
-
 		return tokenRepository.existsById(newToken).flatMap(exist -> {
 			log.info("Supplied token already exist? {}", exist);
 

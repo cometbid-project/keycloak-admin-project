@@ -15,7 +15,7 @@ import lombok.Getter;
  */
 public enum StatusType {
 	
-	VALID("ACTIVE"), EXPIRED("EXPIRED"), LOCKED("LOCKED"), DISABLED("DISABLED");    
+	VALID("ACTIVE"), EXPIRED("EXPIRE"), LOCKED("LOCK"), DISABLED("DISABLE");    
 
 	@Getter
 	private final String name;

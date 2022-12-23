@@ -4,15 +4,12 @@
 package com.keycloak.admin.client.oauth.service.it;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
 
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.EmailStatusUpdateRequest;
-import com.keycloak.admin.client.models.EnableTwoFactorAuthResponse;
+import com.keycloak.admin.client.models.EnableMfaResponse;
 import com.keycloak.admin.client.models.SendOtpRequest;
-import com.keycloak.admin.client.models.ProfileStatusUpdateRequest;
 import com.keycloak.admin.client.models.StatusUpdateRequest;
 import com.keycloak.admin.client.models.TotpRequest;
 import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
@@ -52,7 +49,7 @@ public interface UserAuthenticationService {
 	 * @return
 	 */
 	Mono<AuthenticationResponse> verifyTotpCode(TotpRequest totpRequest, ServerHttpRequest r);
-	
+
 	/**
 	 * 
 	 * @param otpRequest
@@ -67,7 +64,15 @@ public interface UserAuthenticationService {
 	 * @param authRequest
 	 * @return
 	 */
-	Mono<EnableTwoFactorAuthResponse> updateTwoFactorAuth(String username, boolean enable2fa);
+	Mono<EnableMfaResponse> updateMFA(String username, boolean enable2fa);
+
+	/**
+	 * 
+	 * @param username
+	 * @param refreshToken
+	 * @return
+	 */
+	Mono<String> signout(final String username, final String refreshToken);
 
 	/**
 	 * @return
@@ -78,7 +83,23 @@ public interface UserAuthenticationService {
 	/**
 	 * 
 	 */
-	Mono<String> updateUserStatus(StatusUpdateRequest statusUpdate);
+	Mono<String> updateUserStatus(String username, StatusUpdateRequest statusUpdate);
+
+	/**
+	 * 
+	 * @param userId
+	 * @param statusUpdate
+	 * @return
+	 */
+	Mono<String> updateUserByIdStatus(String userId, StatusUpdateRequest statusUpdate);
+
+	/**
+	 * 
+	 * @param userId
+	 * @param userDetailsUpdate
+	 * @return
+	 */
+	Mono<UserVO> updateUserById(String userId, UserDetailsUpdateRequest userDetailsUpdate);
 
 	/**
 	 * 
@@ -97,11 +118,18 @@ public interface UserAuthenticationService {
 	 * @param statusUpdate
 	 * @return
 	 */
-	Mono<String> enableUserProfile(ProfileStatusUpdateRequest statusUpdate);
+	Mono<String> enableUserProfile(String userId, boolean enableProfile);
 
 	/**
 	 * 
 	 */
-	Mono<AuthenticationResponse> refreshToken(String username, String refreshToken);    
+	Mono<AuthenticationResponse> refreshToken(String username, String refreshToken);
+
+	/**
+	 * 
+	 * @param refreshToken
+	 * @return
+	 */
+	Mono<String> revokeToken(String refreshToken);
 
 }

@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class InsufficientFundException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class InsufficientFundException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -58,7 +58,16 @@ public class InsufficientFundException extends ApplicationDefinedRuntimeExceptio
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INSUFFICIENT_FUND_ERR_CODE;
+		return ErrorCode.INSUFFICIENT_FUND_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INSUFFICIENT_FUND_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

@@ -12,7 +12,7 @@ import java.util.UUID;
 import com.github.javafaker.Faker;
 import org.keycloak.representations.idm.GroupRepresentation;
 
-import com.keycloak.admin.client.common.enums.Role;
+import com.keycloak.admin.client.models.CreateGroupRequest;
 import com.keycloak.admin.client.models.GroupVO;
 
 import lombok.Data;
@@ -25,12 +25,14 @@ import lombok.Data;
 public class GroupBuilder {
 
 	private Faker faker;
-	
+
 	private UUID id = UUID.randomUUID();
 
 	private String path = "/";
 
 	private String name = "new_group";
+	
+	private String description;
 
 	private Map<String, List<String>> attributes = new HashMap<>();
 
@@ -39,9 +41,10 @@ public class GroupBuilder {
 	private Map<String, List<String>> clientRoles = new HashMap<>();
 
 	private GroupBuilder() {
-		faker  = new Faker();		
-		
+		faker = new Faker();
+
 		this.name = faker.team().name().toUpperCase();
+		this.description = faker.lorem().sentence(1);
 		this.path = faker.internet().url();
 		this.realmRoles.add("ADMIN");
 	}
@@ -64,6 +67,11 @@ public class GroupBuilder {
 		this.path = path;
 		return this;
 	}
+	
+	public GroupBuilder withDescription(String description) {
+		this.description = description;
+		return this;
+	}
 
 	public GroupBuilder withAttributes(Map<String, List<String>> attributes) {
 		this.attributes = attributes;
@@ -81,14 +89,19 @@ public class GroupBuilder {
 	}
 
 	public GroupVO build() {
+
+		return GroupVO.builder().id(this.id == null ? null : this.id.toString()).name(this.name).path(this.path)
+				.attributes(this.attributes).realmRoles(this.realmRoles).clientRoles(this.clientRoles).build();
+	}
+	
+	public CreateGroupRequest buildCreateGroupRequest( ) {
 		
-		return GroupVO.builder().id(this.id.toString()).name(this.name).path(this.path).attributes(this.attributes)
-				.realmRoles(this.realmRoles).clientRoles(this.clientRoles).build();
+		return CreateGroupRequest.builder().groupName(this.name).description(this.description).build();
 	}
 
 	public static GroupRepresentation groupRepresentation(UUID id) {
-		Faker lFaker  = Faker.instance();
-		
+		Faker lFaker = Faker.instance();
+
 		GroupRepresentation representation = new GroupRepresentation();
 		representation.setId(id.toString());
 		representation.setName(lFaker.team().name());
@@ -103,7 +116,7 @@ public class GroupBuilder {
 
 		arrayList.add(GroupBuilder.groupRepresentation(UUID.randomUUID()));
 		arrayList.add(GroupBuilder.groupRepresentation(UUID.randomUUID()));
-		
+
 		return arrayList;
 	}
 }

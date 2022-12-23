@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.ToString;
@@ -28,7 +31,7 @@ public class Username {
 	@Schema(name = "roles", description = "User specific application roles, comma separated")
 	private String roles;
 
-	public Username() {
+	private Username() {
 		this(null, null);
 	}
 	
@@ -36,6 +39,7 @@ public class Username {
 		this(username, null);
 	}
 	
+	@JsonCreator
 	public Username(String username, String roles) {
 		this.username = username;
 		this.roles = roles;

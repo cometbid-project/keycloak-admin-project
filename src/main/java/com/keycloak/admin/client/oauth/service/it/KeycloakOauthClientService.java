@@ -5,13 +5,16 @@ package com.keycloak.admin.client.oauth.service.it;
 
 import java.util.List;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.PagingModel;
 import com.keycloak.admin.client.models.PasswordUpdateRequest;
-import com.keycloak.admin.client.models.ProfileStatusUpdateRequest;
+import com.keycloak.admin.client.models.ProfileActivationUpdateRequest;
 import com.keycloak.admin.client.models.SearchUserRequest;
 import com.keycloak.admin.client.models.SocialLink;
 import com.keycloak.admin.client.models.StatusUpdateRequest;
@@ -108,14 +111,22 @@ public interface KeycloakOauthClientService {
 	 * 
 	 * @param status
 	 */
-	Mono<Void> logout(String username, String refreshToken);
+	Mono<Void> logout(String userId, String refreshToken);
+	
+	/**
+	 * 
+	 * @param username
+	 * @param refreshToken
+	 * @return
+	 */
+	Mono<Void> signout(String username, String refreshToken);
 
 	/**
 	 * Update User details
 	 * 
 	 * @return
 	 */
-	//Mono<UserVO> updateOauthUser(UserRepresentation userDetails, String username);
+	Mono<UserVO> updateOauthUserById(UserDetailsUpdateRequest userDetails, String userId);
 
 	/**
 	 * 
@@ -144,7 +155,13 @@ public interface KeycloakOauthClientService {
 	 * @param status
 	 * @return
 	 */
-	Mono<String> updateUserStatus(StatusUpdateRequest statusRequest);
+	Mono<String> updateUserStatus(String username, StatusUpdateRequest statusRequest);
+
+	/*
+	 * 
+	 * 
+	 */
+	Mono<String> updateUserByIdStatus(String userId, StatusUpdateRequest statusRequest);
 
 	/**
 	 * 
@@ -152,7 +169,7 @@ public interface KeycloakOauthClientService {
 	 * @return
 	 */
 	Mono<List<UserRepresentation>> findAllUsers(PagingModel pageModel);
-	
+
 	/**
 	 * 
 	 * @param pageModel
@@ -166,14 +183,14 @@ public interface KeycloakOauthClientService {
 	 * @param username
 	 * @return
 	 */
-	Flux<UserRepresentation> findAllUsers();  
+	Flux<UserRepresentation> findAllUsers();
 
 	/**
 	 * 
 	 * @return
 	 */
 	Mono<String> doMfaValidation(AuthenticationResponse authResponse, String totpCode);
-	
+
 	/**
 	 * 
 	 * @param username
@@ -187,7 +204,7 @@ public interface KeycloakOauthClientService {
 	 * @return
 	 */
 	Mono<List<UserRepresentation>> findUserByEmail(String email, PagingModel pageModel);
-	
+
 	/**
 	 * 
 	 * @param email
@@ -202,13 +219,13 @@ public interface KeycloakOauthClientService {
 	 * @return
 	 */
 	Mono<List<UserRepresentation>> findUsersWithVerifiedEmails(boolean emailVerified, PagingModel pageModel);
-	
+
 	/**
 	 * 
 	 * @param userDetails
 	 * @return
 	 */
-	Mono<String> enableOauthUser(ProfileStatusUpdateRequest profileStatus);
+	Mono<String> enableOauthUser(ProfileActivationUpdateRequest profileStatus);
 
 	/**
 	 * 
@@ -217,6 +234,7 @@ public interface KeycloakOauthClientService {
 	 * @param username
 	 * @return
 	 */
-	//Mono<String> validateMFACode(String otpCode, String totpCode, String username);
+	// Mono<String> validateMFACode(String otpCode, String totpCode, String
+	// username);
 
 }

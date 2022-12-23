@@ -84,7 +84,7 @@ public class ActivationToken implements Serializable {
 	@Indexed(name = "activation_status_index")
 	@Field(name = STATUS_FIELD)
 	private String status;
-	
+
 	@Version
 	@Setter(AccessLevel.PROTECTED)
 	@JsonIgnore
@@ -101,6 +101,25 @@ public class ActivationToken implements Serializable {
 		this.status = status;
 	} //
 
+	/**
+	 * @param username
+	 * @param token
+	 * @param creationDate
+	 * @param expiredTime
+	 * @param status
+	 * @param version
+	 */
+	protected ActivationToken(String username, String token, LocalDateTime creationDate, LocalDateTime expiredTime,
+			String status, Long version) {
+		super();
+		this.username = username;
+		this.token = token;
+		this.creationDate = creationDate;
+		this.expiredTime = expiredTime;
+		this.status = status;
+		this.version = version;
+	}
+
 	public void updateToken(final String token) {
 		this.token = token;
 		this.status = StatusType.VALID.toString();
@@ -113,7 +132,7 @@ public class ActivationToken implements Serializable {
 	public static final String CREATION_DATETIME = "creation_time";
 	public static final String EXPIRY_DATETIME = "expiry_time";
 	public static final String STATUS = "status";
-	
+
 	/**********************************************/
 	/******** Column fields definition ***********/
 	/*********************************************/

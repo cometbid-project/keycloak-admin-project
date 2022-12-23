@@ -31,7 +31,7 @@ public class NewLocationTokenValidationException extends ApplicationDefinedRunti
 	 * @param args
 	 */
 	public NewLocationTokenValidationException(Object[] args) {
-		this("exception.invalidToken", args);
+		this("exception.loc.invalidToken", args);
 	}
 
 	/**
@@ -58,7 +58,15 @@ public class NewLocationTokenValidationException extends ApplicationDefinedRunti
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INVALID_NEWLOCATION_TOKEN_ERR_CODE;
+		return ErrorCode.INVALID_NEWLOCATION_TOKEN_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_NEWLOCATION_TOKEN_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

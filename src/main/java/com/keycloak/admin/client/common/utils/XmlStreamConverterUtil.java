@@ -26,21 +26,35 @@ public class XmlStreamConverterUtil {
 			StringWriter xmlWriter = new StringWriter();
 			marshaller.marshal(object, xmlWriter);
 
-			return xmlWriter.toString();  
+			return xmlWriter.toString();
 		} catch (JAXBException e) {
 			throw new IllegalArgumentException(e);
 		}
 	}
-	
-	public static <T, E> E fromListModeltoXml(final E object, Class<? extends E> genericListType, Class<? extends T> resultType) {
+
+	public static <T, E> String fromListModeltoXml(final E object, Class<? extends E> genericListType,
+			Class<? extends T> resultType) {
 
 		try {
 			JAXBContext jc = JAXBContext.newInstance(genericListType, resultType);
-			E retr = marshallUnmarshall(object, jc); 
+			String xml = marshall(object, jc);
+
+			return xml;
+		} catch (JAXBException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+
+	public static <T, E> E fromXmlToListModel(final String xml, Class<? extends E> genericListType,
+			Class<? extends T> resultType) {
+
+		try {
+			JAXBContext jc = JAXBContext.newInstance(genericListType, resultType);
+			E retr = Unmarshall(xml, jc);
 
 			return retr;
 		} catch (JAXBException e) {
-			throw new IllegalArgumentException(e);  
+			throw new IllegalArgumentException(e);
 		}
 	}
 
@@ -60,7 +74,7 @@ public class XmlStreamConverterUtil {
 		}
 	}
 
-	public static <O> O marshallUnmarshall(O o, JAXBContext jc) throws JAXBException {
+	public static <O> String marshall(O o, JAXBContext jc) throws JAXBException {
 
 		// Creating a Marshaller
 		Marshaller jaxbMarshaller = jc.createMarshaller();
@@ -70,9 +84,11 @@ public class XmlStreamConverterUtil {
 		jaxbMarshaller.marshal(o, result);
 
 		// Printing XML
-		String xml = result.toString();
-		System.out.println(xml);
+		return result.toString();
+	}
 
+	@SuppressWarnings("unchecked")
+	public static <O> O Unmarshall(final String xml, JAXBContext jc) throws JAXBException {
 		// Creating an Unmarshaller
 		Unmarshaller jaxbUnmarshaller = jc.createUnmarshaller();
 		StringReader sr = new StringReader(xml);
@@ -80,6 +96,5 @@ public class XmlStreamConverterUtil {
 		O retr = (O) jaxbUnmarshaller.unmarshal(sr);
 
 		return retr;
-
 	}
 }

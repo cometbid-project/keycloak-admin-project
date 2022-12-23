@@ -59,7 +59,16 @@ public class UnauthenticatedUserException extends ApplicationDefinedRuntimeExcep
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNAUTHENTICATED_USER_ERR_CODE;
+		return ErrorCode.UNAUTHENTICATED_USER_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNAUTHENTICATED_USER_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

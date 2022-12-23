@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class ResourceAlreadyExistException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class ResourceAlreadyExistException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -59,8 +59,16 @@ public class ResourceAlreadyExistException extends ApplicationDefinedRuntimeExce
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.RESOURCE_EXIST_ERR_CODE;
+		return ErrorCode.RESOURCE_EXIST_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.RESOURCE_EXIST_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }
-

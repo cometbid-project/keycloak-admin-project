@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
  * 
- * @author Chinna
+ * @author Gbenga
  *
  */
 public class LocalUser extends User implements OAuth2User, OidcUser {
@@ -21,6 +21,7 @@ public class LocalUser extends User implements OAuth2User, OidcUser {
 	 * 
 	 */
 	private static final long serialVersionUID = -2845160792248762779L;
+
 	private final OidcIdToken idToken;
 	private final OidcUserInfo userInfo;
 	private Map<String, Object> attributes;
@@ -29,6 +30,7 @@ public class LocalUser extends User implements OAuth2User, OidcUser {
 	public LocalUser(final String userID, final String password, final boolean enabled, final boolean accountNonExpired,
 			final boolean credentialsNonExpired, final boolean accountNonLocked,
 			final Collection<? extends GrantedAuthority> authorities, final UserVO userVo) {
+
 		this(userID, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities, userVo,
 				null, null);
 	}
@@ -37,6 +39,7 @@ public class LocalUser extends User implements OAuth2User, OidcUser {
 			final boolean credentialsNonExpired, final boolean accountNonLocked,
 			final Collection<? extends GrantedAuthority> authorities, final UserVO userVo, OidcIdToken idToken,
 			OidcUserInfo userInfo) {
+
 		super(userID, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
 		this.userVo = userVo;
 		this.idToken = idToken;

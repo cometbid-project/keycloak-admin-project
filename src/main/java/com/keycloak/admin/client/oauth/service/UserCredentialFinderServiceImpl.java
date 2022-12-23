@@ -131,10 +131,11 @@ public class UserCredentialFinderServiceImpl implements UserCredentialFinderServ
 	public Flux<UserVO> findUserByEmail(@NotBlank final String email, @NotNull final PagingModel pagingModel) {
 
 		return keycloakClient.findUserByEmail(email, pagingModel).flatMapIterable(list -> list)
+				.map(UserMapper::toViewObject)
 				.doOnComplete(() -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.SEARCH_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
 								"Searched users auth profiles by email: " + email, ObjectType.USER_AUTH, ContentType.AUTH)))
-				.map(UserMapper::toViewObject).doOnError(e -> log.error("Failed to update course", e.getMessage()))
+				.doOnError(e -> log.error("Failed to update course", e.getMessage()))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("find.user.error")));
 	}
 

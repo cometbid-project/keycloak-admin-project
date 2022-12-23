@@ -84,7 +84,7 @@ public class PasswordResetToken implements Serializable {
 	@Indexed(name = "activation_status_index")
 	@Field(name = STATUS_FIELD)
 	private String status;
-	
+
 	@Version
 	@Setter(AccessLevel.PROTECTED)
 	@JsonIgnore
@@ -108,6 +108,25 @@ public class PasswordResetToken implements Serializable {
 		this.expiredTime = expiredTime;
 		this.status = status;
 	} //
+
+	/**
+	 * @param username
+	 * @param token
+	 * @param creationDate
+	 * @param expiredTime
+	 * @param status
+	 * @param version
+	 */
+	protected PasswordResetToken(String username, String token, LocalDateTime creationDate, LocalDateTime expiredTime,
+			String status, Long version) {
+		super();
+		this.username = username;
+		this.token = token;
+		this.creationDate = creationDate;
+		this.expiredTime = expiredTime;
+		this.status = status;
+		this.version = version;
+	}
 
 	// Json fields definition
 	public static final String USERNAME = "username";

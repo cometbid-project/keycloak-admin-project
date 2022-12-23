@@ -12,7 +12,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  *
  */
 @SuppressWarnings("serial")
-public class UnusualLocationException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UnusualLocationException extends ApplicationDefinedRuntimeException {
 
 	private static final HttpStatus STATUS = HttpStatus.EXPECTATION_FAILED;
 
@@ -55,6 +55,16 @@ public class UnusualLocationException extends ApplicationDefinedRuntimeException
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNUSUAL_LOCATION_ERR_CODE;
+		return ErrorCode.UNUSUAL_LOCATION_ERR_CODE.getErrCode();
 	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNUSUAL_LOCATION_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
+
 }

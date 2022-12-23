@@ -91,6 +91,16 @@ public class ErrorPublisher {
 		return Mono.error(new ServiceException(body, statusCode));
 	}
 
+	public static <T> Mono<T> raiseInvalidJwtToken(String messageKey, Object[] args) {
+		return Mono.error(new InvalidJwtTokenException(messageKey, args));
+	}
+
+	public static <T> Mono<T> raiseResetPasswordTokenError(String messageKey, Object[] args) {
+		return Mono.error(new ResetPasswordTokenValidationException(messageKey, args));
+	}
+	
+	//================================================================================================================
+
 	public static void raiseRuntimeException(String message, Throwable ex) {
 		throw new ApplicationDefinedRuntimeException(message, ex);
 	}
@@ -159,19 +169,10 @@ public class ErrorPublisher {
 		throw new BadRequestException(messageKey, args);
 	}
 
-	public static <T> Mono<T> raiseResetPasswordTokenError(String messageKey, Object[] args) {
-		return Mono.error(new ResetPasswordTokenValidationException(messageKey, args));
-	}
-
 	public static InvalidInputException raiseInvalidInputException(String message) {
 		Set<ConstraintViolation<?>> constraintViolations = new HashSet<>();
 
 		throw new ConstraintViolationException(message, constraintViolations);
-	}
-
-	public static <T> Mono<T> raiseInvalidJwtToken(String messageKey, Object[] args) {
-
-		return Mono.error(new InvalidJwtTokenException(messageKey, args));
 	}
 
 	public static void raiseInvalidJwtTokenException(String messageKey, Object[] args) {

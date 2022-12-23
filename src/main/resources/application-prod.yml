@@ -1,0 +1,23 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+
+server:
+  port: ${PORT}
+  shutdown: graceful
+  http2:
+    enabled: true
+  ssl:
+    key-store-type: PKCS12
+    key-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-keystore.p12
+    key-store-password: cometbid123
+    key-alias: gateway-server    
+    key-password: cometbid123
+    trust-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-trustStore.p12
+    trust-store-password: cometbid123
+    client-auth: none
+    protocol: TLS
+    enabled-protocols:
+    - TLSv1.2
+    enabled: true

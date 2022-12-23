@@ -46,25 +46,46 @@ public class ApiError extends ApiResponse implements Serializable {
 
 	@JsonProperty(value = "error")
 	private String error;
-	
+
+	/**
+	 * Application error code, which is different from HTTP error code.
+	 */
 	@JsonProperty("error_code")
 	private String errorCode;
 
 	@JsonProperty(value = "reason")
 	private String reason;
 
+	/**
+	 * Url of request that produced the error.
+	 */
+	@Builder.Default
 	@JsonProperty(value = "path")
-	private String path;
+	private String path = "Not available";
 
+	/**
+	 * Short, human-readable summary of the problem.
+	 */
 	@JsonProperty(value = "message")
 	private String message;
 
+	/**
+	 * HTTP status code for this occurrence of the problem, set by the origin
+	 * server.
+	 */
 	@JsonProperty(value = "status")
 	private Integer status; // We'd need it as integer in JSON serialization
 
 	@JsonIgnore
 	private HttpStatus statusCode;
-	
+
+	/**
+	 * Method of request that produced the error.
+	 */
+	@Builder.Default
+	@JsonProperty(value = "method")
+	private String reqMethod = "Not available";
+
 	@JsonProperty(value = "error_time")
 	private String timestamp;
 
@@ -82,10 +103,11 @@ public class ApiError extends ApiResponse implements Serializable {
 		this.traceId = ThreadContext.get("X-B3-TraceId");
 	}
 
-	public ApiError(String path, String errorCode, String reason, int code, String message, String detailMessage) {
+	public ApiError(String path, String reqMethod, String errorCode, String reason, int code, String message, String detailMessage) {
 		this();
 		this.status = code;
 		this.path = path;
+		this.reqMethod = reqMethod;
 		this.statusCode = HttpStatus.resolve(code);
 		this.message = message;
 		this.debugMessage = detailMessage;
@@ -94,10 +116,11 @@ public class ApiError extends ApiResponse implements Serializable {
 		this.reason = reason;
 	}
 
-	public ApiError(String path, String errorCode, HttpStatus code, String message, String detailMessage) {
+	public ApiError(String path, String reqMethod, String errorCode, HttpStatus code, String message, String detailMessage) {
 		this();
 		this.status = code.value();
 		this.path = path;
+		this.reqMethod = reqMethod;
 		this.statusCode = code;
 		this.message = message;
 		this.debugMessage = detailMessage;
@@ -106,20 +129,22 @@ public class ApiError extends ApiResponse implements Serializable {
 		this.reason = code.getReasonPhrase();
 	}
 
-	public ApiError(String path, String errorCode, HttpStatus statusCode, String message, Throwable ex) {
-		this(path, errorCode, statusCode, message, ex.getLocalizedMessage());
+	public ApiError(String path, String reqMethod, String errorCode, HttpStatus statusCode, String message, Throwable ex) {
+		this(path, reqMethod, errorCode, statusCode, message, ex.getLocalizedMessage());
 	}
 
-	ApiError(HttpStatus statusCode) {
+	ApiError(HttpStatus statusCode, String reqMethod) {
 		this();
 		this.status = statusCode.value();
+		this.reqMethod = reqMethod;
 		this.statusCode = statusCode;
 		this.reason = statusCode.getReasonPhrase();
 	}
 
-	ApiError(HttpStatus statusCode, String errorCode, Throwable ex) {
+	ApiError(HttpStatus statusCode, String reqMethod, String errorCode, Throwable ex) {
 		this();
 		this.status = statusCode.value();
+		this.reqMethod = reqMethod;
 		this.statusCode = statusCode;
 		this.setMessage("Unexpected error");
 		this.debugMessage = ex.getLocalizedMessage();
@@ -127,9 +152,10 @@ public class ApiError extends ApiResponse implements Serializable {
 		this.reason = statusCode.getReasonPhrase();
 	}
 
-	ApiError(HttpStatus statusCode, String errorCode, String message, Throwable ex) {
+	ApiError(HttpStatus statusCode, String reqMethod, String errorCode, String message, Throwable ex) {
 		this();
 		this.status = statusCode.value();
+		this.reqMethod = reqMethod;
 		this.statusCode = statusCode;
 		this.setMessage(message);
 		this.errorCode = errorCode;

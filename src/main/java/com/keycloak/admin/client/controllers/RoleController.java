@@ -3,12 +3,15 @@
  */
 package com.keycloak.admin.client.controllers;
 
+import java.net.URI;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
-import org.apache.commons.lang3.StringUtils;
+import org.reactivestreams.Publisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,12 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.server.ServerRequest;
-
 import com.keycloak.admin.client.common.utils.ResponseCreator;
 import com.keycloak.admin.client.models.CreateRoleRequest;
-import com.keycloak.admin.client.models.GroupVO;
 import com.keycloak.admin.client.models.RoleVO;
-import com.keycloak.admin.client.oauth.service.RoleServiceImpl;
 import com.keycloak.admin.client.oauth.service.it.RoleService;
 import com.keycloak.admin.client.response.model.AppResponse;
 
@@ -50,7 +50,7 @@ import reactor.core.publisher.Mono;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/roles")
+@RequestMapping(value = "roles/v1")
 @Tag(name = "User Roles", description = "API for roles(Realm and Client) information.")
 @SecurityScheme(name = "Bearer Token Authentication", type = SecuritySchemeType.HTTP, scheme = "token")
 public class RoleController {
@@ -77,7 +77,7 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/")
-	public Flux<RoleVO> findAllRoles() {
+	public Publisher<RoleVO> findAllRoles() {
 
 		return roleService.findAllRealmRoles();
 	}
@@ -100,7 +100,7 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/client/{client_id}")
-	public Flux<RoleVO> findAllClientRoles(@PathVariable("client_id") @NotBlank String clientId) {
+	public Publisher<RoleVO> findAllClientRoles(@PathVariable("client_id") @NotBlank String clientId) {
 
 		return roleService.findAllClientRoles(clientId);
 	}
@@ -125,7 +125,7 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping(value = "/")
-	public Mono<RoleVO> createRealmRole(@RequestBody @Valid CreateRoleRequest roleRequest) {
+	public Publisher<RoleVO> createRealmRole(@RequestBody @Valid CreateRoleRequest roleRequest) {
 
 		return roleService.createRealmRole(roleRequest);
 	}
@@ -149,12 +149,13 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping(value = "/{role_name}/realm")
-	public Mono<AppResponse> addToRealmRole(@RequestBody @Valid CreateRoleRequest realmRoleToAdd,
+	public Publisher<ResponseEntity<AppResponse>> addToRealmRole(@RequestBody @Valid CreateRoleRequest realmRoleToAdd,
 			@Parameter(description = "Realm role to make composite") @PathVariable("role_name") @NotBlank String realmRole,
 			ServerRequest r) {
 
 		return roleService.makeRealmRoleComposite(realmRole, realmRoleToAdd)
-				.map(msg -> this.responseCreator.createAppResponse(msg, r));
+				.map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -176,13 +177,14 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping(value = "/{role_name}/realm/client/{client_id}")
-	public Mono<AppResponse> addClientRoleToRealmRole(
+	public Publisher<ResponseEntity<AppResponse>> addClientRoleToRealmRole(
 			@Parameter(description = "Realm role name to make composite") @PathVariable("role_name") @NotBlank String realmRole,
 			@Parameter(description = "Client id of client") @PathVariable("client_id") @NotBlank String clientId,
 			@RequestBody @Valid CreateRoleRequest clientRole, ServerRequest r) {
 
 		return roleService.makeRealmRoleCompositeWithClientRole(realmRole, clientRole, clientId)
-				.map(msg -> this.responseCreator.createAppResponse(msg, r));
+				.map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -204,13 +206,14 @@ public class RoleController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping(value = "/client/{client_id}/role_name/{role_name}")
-	public Mono<AppResponse> addToClientRole(
+	public Publisher<ResponseEntity<AppResponse>> addToClientRole(
 			@Parameter(description = "Client id of client") @PathVariable("client_id") @NotBlank String clientId,
 			@Parameter(description = "Client role name to make composite") @NotBlank String clientRoleName,
 			@RequestBody @Valid CreateRoleRequest clientRoleToAdd, ServerRequest r) {
 
 		return roleService.makeClientRoleComposite(clientRoleToAdd, clientRoleName, clientId)
-				.map(msg -> this.responseCreator.createAppResponse(msg, r));
+				.map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -231,9 +234,9 @@ public class RoleController {
 			@ApiResponse(responseCode = "422", description = "${api.responseCodes.unprocessableEntity.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "500", description = "${api.responseCodes.server.error.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
-	
+
 	@PostMapping(value = "/client/{client_id}")
-	public Mono<RoleVO> createClientRole(
+	public Publisher<RoleVO> createClientRole(
 			@Parameter(description = "Client id of client") @PathVariable("client_id") @NotBlank String clientId,
 			@RequestBody @Valid CreateRoleRequest roleToCreate, ServerRequest r) {
 
@@ -257,10 +260,10 @@ public class RoleController {
 			@ApiResponse(responseCode = "500", description = "${api.responseCodes.server.error.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
-	@GetMapping(value = "/role_name/realm", params = {"role_name"})
-	public Mono<RoleVO> findRealmRole(@RequestParam("role_name") @NotBlank String roleName) {
+	@GetMapping(value = "/role_name/realm", params = { "role_name" })
+	public Publisher<ResponseEntity<RoleVO>> findRealmRole(@RequestParam("role_name") @NotBlank String roleName) {
 
-		return roleService.findRealmRoleByName(roleName);
+		return roleService.findRealmRoleByName(roleName).map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -280,11 +283,10 @@ public class RoleController {
 			@ApiResponse(responseCode = "500", description = "${api.responseCodes.server.error.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
-	@GetMapping(value = "/role_name/client/{client_id}", params = {"role_name"})
-	public Mono<RoleVO> findClientRole(
-			@RequestParam("role_name") @NotBlank String roleName,
+	@GetMapping(value = "/role_name/client/{client_id}", params = { "role_name" })
+	public Publisher<ResponseEntity<RoleVO>> findClientRole(@RequestParam("role_name") @NotBlank String roleName,
 			@Parameter(description = "Client id of client") @PathVariable("client_id") @NotBlank String clientId) {
 
-		return roleService.findClientRoleByName(roleName, clientId);
+		return roleService.findClientRoleByName(roleName, clientId).map(response -> ResponseEntity.ok(response));
 	}
 }

@@ -5,7 +5,7 @@ package com.keycloak.admin.client.token.utils;
 
 import static com.keycloak.admin.client.config.AuthProperties.*;
 import com.keycloak.admin.client.config.AuthProperties;
-import com.keycloak.admin.client.models.CustomAuthenticationDetails;
+import com.keycloak.admin.client.models.AuthenticationDetails;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -108,8 +108,8 @@ public class NimbusTokenProvider implements TokenManager {
 					.claim(AUTHORITIES_CLAIM, authorities);
 
 			Object credentialDetails = authentication.getDetails();
-			if (credentialDetails != null && credentialDetails instanceof CustomAuthenticationDetails) {
-				CustomAuthenticationDetails authDetails = (CustomAuthenticationDetails) credentialDetails;
+			if (credentialDetails != null && credentialDetails instanceof AuthenticationDetails) {
+				AuthenticationDetails authDetails = (AuthenticationDetails) credentialDetails;
 
 				// add JWS Claims - Subscription.
 				jwtBuilder.claim(SUBSCRIPTION_CLAIM, authDetails.getSubscriptionType());
@@ -258,8 +258,8 @@ public class NimbusTokenProvider implements TokenManager {
 				.claim(AUTHORITIES_CLAIM, authorities);
 
 		Object credentialDetails = authentication.getDetails();
-		if (credentialDetails != null && credentialDetails instanceof CustomAuthenticationDetails) {
-			CustomAuthenticationDetails authDetails = (CustomAuthenticationDetails) credentialDetails;
+		if (credentialDetails != null && credentialDetails instanceof AuthenticationDetails) {
+			AuthenticationDetails authDetails = (AuthenticationDetails) credentialDetails;
 
 			// add JWS Claims - Subscription.
 			jwtBuilder.claim(SUBSCRIPTION_CLAIM, authDetails.getSubscriptionType());

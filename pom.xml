@@ -3,30 +3,68 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.7.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>com.keycloak.admin.client</groupId>
 	<artifactId>keycloak-admin-project</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>keycloak-admin-project</name>
 	<description>Demo project for Spring Boot and Keycloak Admin Client</description>
+
 	<properties>
-		<java.version>11</java.version>
+		<start-class>com.keycloak.admin.client.KeycloakAdminProjectApplication</start-class>
+		<java.version>17</java.version>
 		<javafaker.version>1.0.2</javafaker.version>
-		<keycloak.version>14.0.0</keycloak.version>
+		<keycloak.version>20.0.1</keycloak.version>
 		<open-api-doc>1.6.9</open-api-doc>
 		<passay.version>1.6.0</passay.version>
+		<blockhound.version>1.0.6.RELEASE</blockhound.version>
 		<jsonwebtoken.version>0.11.2</jsonwebtoken.version>
 		<uap-java.version>1.5.3</uap-java.version>
 		<jodatime.version>2.10.8</jodatime.version>
 		<resteasy.version>3.15.1.Final</resteasy.version>
 		<xstream.version>1.4.19</xstream.version>
+		<spring-cloud.version>2020.0.3</spring-cloud.version>
 		<samstevens.totp.version>1.7.1</samstevens.totp.version>
+		<test-container-version>1.17.6</test-container-version>
+		<restdocs-api-spec.version>0.16.2</restdocs-api-spec.version>
+		<restdocs-spec.version>0.19</restdocs-spec.version>
+		<keycloak-test-container-version>2.4.0</keycloak-test-container-version>
+		<embedded-cloud-container-version>2.2.10</embedded-cloud-container-version>
 	</properties>
+
+	<!-- need this here for now since restdocs-openapi-generator is not in central -->
+	<repositories>
+		<repository>
+			<id>jcenter</id>
+			<url>https://jcenter.bintray.com</url>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>jcenter</id>
+			<url>https://jcenter.bintray.com</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -44,6 +82,10 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
@@ -56,13 +98,21 @@
 		<dependency>
 			<groupId>io.projectreactor.tools</groupId>
 			<artifactId>blockhound</artifactId>
-			<version>1.0.6.RELEASE</version>
+			<version>${blockhound.version}</version>
 			<!-- <scope>test</scope> -->
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aspects</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -149,6 +199,10 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-sleuth</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>io.projectreactor.addons</groupId>
 			<artifactId>reactor-extra</artifactId>
 		</dependency>
@@ -190,15 +244,16 @@
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-ui</artifactId>
-			<version>${open-api-doc}</version>
-		</dependency>
+		<!-- <dependency> <groupId>org.springdoc</groupId> <artifactId>springdoc-openapi-ui</artifactId> 
+			<version>${open-api-doc}</version> </dependency> -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-webflux-ui</artifactId>
 			<version>${open-api-doc}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -247,22 +302,76 @@
 			<version>${jsonwebtoken.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.playtika.testcontainers</groupId>
-			<artifactId>embedded-redis</artifactId>
-			<version>2.2.5</version>
-			<scope>test</scope>
-		</dependency>
+		<!-- <dependency> <groupId>com.playtika.testcontainers</groupId> <artifactId>embedded-redis</artifactId> 
+			<version>2.2.5</version> <scope>test</scope> </dependency> -->
 		<dependency>
 			<groupId>de.flapdoodle.embed</groupId>
 			<artifactId>de.flapdoodle.embed.mongo</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Embedded Redis for testing purposes -->
+		<dependency>
+			<groupId>it.ozimov</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.7.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-bootstrap</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- <dependency> <groupId>com.playtika.testcontainers</groupId> <artifactId>embedded-keycloak</artifactId> 
+			<version>${embedded-cloud-container-version}</version> <scope>test</scope> 
+			</dependency> -->
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<version>5.3.0</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.codehaus.groovy</groupId>
+					<artifactId>groovy-xml</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.codehaus.groovy</groupId>
+					<artifactId>groovy-json</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.github.dasniko</groupId>
+			<artifactId>testcontainers-keycloak</artifactId>
+			<version>${keycloak-test-container-version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- <dependency> <groupId>org.testcontainers</groupId> <artifactId>testcontainers</artifactId> 
+			<version>${test-container-version}</version> <scope>test</scope> </dependency> -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${test-container-version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- <dependency> <groupId>com.playtika.testcontainers</groupId> <artifactId>embedded-kafka</artifactId> 
+			<version>${embedded-cloud-container-version}</version> <scope>test</scope> 
+			</dependency> -->
 		<dependency>
 			<groupId>com.github.javafaker</groupId>
 			<artifactId>javafaker</artifactId>
 			<version>${javafaker.version}</version>
-			<scope>test</scope>
+			<!-- <scope>test</scope> -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -280,14 +389,63 @@
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.epages</groupId>
+			<artifactId>restdocs-api-spec</artifactId>
+			<version>${restdocs-api-spec.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.epages</groupId>
+			<artifactId>restdocs-api-spec-webtestclient</artifactId>
+			<version>${restdocs-api-spec.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>com.github.berkleytechnologyservices.restdocs-spec</groupId>
+				<artifactId>restdocs-spec-maven-plugin</artifactId>
+				<version>${restdocs-spec.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<!--suppress MavenModelInspection -->
+							<skip>${skipTests}</skip>
+							<specifications>
+								<specification>
+									<type>OPENAPI_V2</type>
+								</specification>
+								<specification>
+									<type>OPENAPI_V3</type>
+									<format>JSON</format>
+								</specification>
+								<specification>
+									<type>POSTMAN_COLLECTION</type>
+									<filename>gateway-api-collection</filename>
+								</specification>
+							</specifications>
+							<!-- <host>localhost:8080</host> -->
+							<outputDirectory>${project.build.outputDirectory}/static/docs</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<mainClass>com.keycloak.admin.client.KeycloakAdminProjectApplication</mainClass>
+					<jvmArguments>-XX:+AllowRedefinitionToAddDeleteMethods</jvmArguments>
+					<layout>JAR</layout>
+					<profiles>
+						<profile>dev</profile>
+					</profiles>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

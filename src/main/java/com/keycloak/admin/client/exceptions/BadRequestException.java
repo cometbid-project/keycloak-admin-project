@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class BadRequestException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class BadRequestException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 *
@@ -59,7 +59,15 @@ public class BadRequestException extends ApplicationDefinedRuntimeException impl
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.BAD_REQUEST_ERR_CODE;
+		return ErrorCode.BAD_REQUEST_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.BAD_REQUEST_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

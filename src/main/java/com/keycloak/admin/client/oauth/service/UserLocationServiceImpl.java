@@ -392,17 +392,17 @@ public class UserLocationServiceImpl implements UserLocationService {
 	}
 
 	private Mono<String> lockUserAccount(final String username) {
-		StatusUpdateRequest statusRequest = new StatusUpdateRequest(username, StatusType.LOCKED.toString());
+		StatusUpdateRequest statusRequest = new StatusUpdateRequest(StatusType.LOCKED.toString());
 
 		log.info("Locking user account temporarily {}", statusRequest);
-		return keycloakClient.updateUserStatus(statusRequest);
+		return keycloakClient.updateUserStatus(username, statusRequest);
 	}
 
 	private Mono<String> unlockUserAccount(final String username) {
-		StatusUpdateRequest statusRequest = new StatusUpdateRequest(username, StatusType.VALID.toString());
+		StatusUpdateRequest statusRequest = new StatusUpdateRequest(StatusType.VALID.toString());
 
 		log.info("UnLocking user account {}", statusRequest);
-		return keycloakClient.updateUserStatus(statusRequest);
+		return keycloakClient.updateUserStatus(username, statusRequest);
 	}
 	
 	/**

@@ -79,6 +79,7 @@ public class GroupServiceImpl implements GroupService {
 	@Override
 	public Mono<GroupVO> createRealmGroup(@Valid final CreateGroupRequest newGroup) {
 		final String groupName = newGroup.getGroupName();
+		final String groupDesc = newGroup.getDescription();
 
 		Mono<List<String>> monoList = findAllRealmGroupNames().filter(group -> group.equalsIgnoreCase(groupName))
 				.collectSortedList();
@@ -90,6 +91,7 @@ public class GroupServiceImpl implements GroupService {
 
 			GroupRepresentation realmGroup = new GroupRepresentation();
 			realmGroup.setName(groupName.toUpperCase());
+			realmGroup.singleAttribute("description", groupDesc == null ? "Group: " + groupName : groupDesc);
 			realmGroup.setRealmRoles(Collections.emptyList());
 			realmGroup.setClientRoles(Collections.emptyMap());
 			realmGroup.setSubGroups(Collections.emptyList());

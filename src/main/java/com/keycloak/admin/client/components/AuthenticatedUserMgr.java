@@ -77,8 +77,10 @@ public class AuthenticatedUserMgr {
 	 * 
 	 * @return
 	 */
-	public Mono<Authentication> getCurrentAuthenticationInstance() {
-		return ReactiveSecurityContextHolder.getContext().map(SecurityContext::getAuthentication);
+	public Mono<String> getLoggedInUser(ServerWebExchange webExchange) {
+		return webExchange.getPrincipal()
+				.switchIfEmpty(ErrorPublisher.raiseUnauthenticatedUserError("unauthenticated.user", new Object[] {}))
+				.map(p -> p.getName());
 	}
 
 	/**
@@ -86,7 +88,7 @@ public class AuthenticatedUserMgr {
 	 * 
 	 * @return
 	 */
-	public Mono<User> getCurrentUserWithException(ServerWebExchange webExchange) {
+	public Mono<User> getCurrentUserWithException() {
 
 		return ReactiveSecurityContextHolder.getContext().map(SecurityContext::getAuthentication)
 				.switchIfEmpty(ErrorPublisher.raiseUnauthenticatedUserError("unauthenticated.user", new Object[] {}))

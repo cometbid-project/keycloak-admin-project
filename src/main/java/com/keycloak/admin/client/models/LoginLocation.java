@@ -5,6 +5,7 @@
  */
 package com.keycloak.admin.client.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,14 +27,15 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.Value;
 
 /**
  *
  * @author Gbenga
  */
-@Data
+@Value
 @Builder
-@NoArgsConstructor
+//@NoArgsConstructor
 //@AllArgsConstructor
 @ToString(includeFieldNames = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -85,19 +87,12 @@ public class LoginLocation implements Serializable {
 	private Double latitude;
 
 	@JsonProperty("login_time")
-	@ValidDate(message = "{SuccessLogin.loginTime.validDate}")
+	@ValidDate(message = "{loginTime.validDate}")
 	@JsonDeserialize(using = LocalDateTimeDeserializer.class)
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@NotNull(message = "{SuccessLogin.loginTime.notNull}")
+	@NotNull(message = "{loginTime.notNull}")
 	@Field(name = "LOGIN_TIME")
 	private LocalDateTime loginTime;
-
-	/*
-	private static final String UNKNOWN_DEVICE = "UNKNOWN-DEVICE";
-	private static final String UNKNOWN_COUNTRY = "UNKNOWN-COUNTRY";
-	private static final String UNKNOWN_STATE = "UNKNOWN-STATE";
-	private static final String UNKNOWN_CITY = "UNKNOWN-CITY";
-	*/
 
 	/**
 	 * @param ipAddr
@@ -112,6 +107,7 @@ public class LoginLocation implements Serializable {
 	 * @param latitude
 	 * @param loginTime
 	 */
+	@JsonCreator
 	public LoginLocation(String ipAddr, String ispAddr, String deviceId, String deviceType, String deviceDetails,
 			String countryCode, String stateCode, String city, Double longitude, Double latitude,
 			LocalDateTime loginTime) {

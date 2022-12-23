@@ -10,19 +10,21 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+
+import org.reactivestreams.Publisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.server.ServerRequest;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,15 +63,13 @@ import reactor.core.publisher.Mono;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/users")
+@RequestMapping(value = "/v1/users")
 @Tag(name = "User", description = "API for user information.")
 @SecurityScheme(name = "Bearer Token Authentication", type = SecuritySchemeType.HTTP, scheme = "token")
 public class UserController {
 
 	private final UserCredentialFinderService userCredentialService;
-
 	private final UserCredentialService userService;
-
 	private final ResponseCreator responseCreator;
 
 	/**
@@ -89,19 +89,18 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/search", params = { "page", "size", "email", "first_name", "last_name", "verified_emails" })
-	public Flux<UserVO> searchUser(
+	public Publisher<UserVO> searchUser(
 			@Parameter(description = "User's email to search by") @RequestParam(name = "email", required = false) String email,
 			@Parameter(description = "User's first name to search by") @RequestParam(name = "first_name", required = false) String firstName,
 			@Parameter(description = "User's last name to search by") @RequestParam(name = "last_name", required = false) String lastName,
 			@RequestParam(name = "verified_emails") boolean verifiedEmails,
-			@RequestParam(name = "page", defaultValue = "1") @Min(value = 1, message = "{page.no.min}") int page,
-			@RequestParam(name = "size", defaultValue = "10") @Max(value = 50, message = "{page.size.max}") int size) {
+			@RequestParam(name = "page", defaultValue = "1") @Size(min = 1, message = "{pagination.size.page}") int page,
+			@RequestParam(name = "limit", defaultValue = "10") @Size(min = 1, max = 50, message = "{pagination.size.limit}") int limit) {
 
-		PagingModel pagingModel = PagingModel.builder().pgNo(page).pgSize(size).build();
+		PagingModel pagingModel = PagingModel.builder().pageNo(page).pageSize(limit).build();
 
 		SearchUserRequest searchRequest = SearchUserRequest.builder().email(email).firstName(firstName)
 				.lastName(lastName).emailVerified(verifiedEmails).build();
-		// GlobalProgrammaticValidator.validateInput(searchRequest);
 
 		return userCredentialService.search(searchRequest, pagingModel);
 	}
@@ -126,7 +125,7 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping("/{id}")
-	public Mono<ResponseEntity<UserVO>> findById(
+	public Publisher<ResponseEntity<UserVO>> findById(
 			@Parameter(description = "id of User to be searched") @PathVariable @NotBlank String id) {
 
 		return userCredentialService.findUserById(id).map(userFound -> ResponseEntity.ok(userFound));
@@ -149,12 +148,12 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping(value = "/email/{email}", params = { "page", "size" })
-	public Flux<UserVO> findByEmail(
+	public Publisher<UserVO> findByEmail(
 			@Parameter(description = "User email search") @PathVariable("email") @NotBlank String email,
-			@RequestParam(name = "page", defaultValue = "1") @Min(value = 1, message = "{page.no.min}") int page,
-			@RequestParam(name = "size", defaultValue = "10") @Max(value = 50, message = "{page.size.max}") int size) {
+			@RequestParam(name = "page", defaultValue = "1") @Size(min = 1, message = "{pagination.size.page}") int page,
+			@RequestParam(name = "limit", defaultValue = "10") @Size(min = 1, max = 50, message = "{pagination.size.limit}") int limit) {
 
-		PagingModel pagingModel = PagingModel.builder().pgNo(page).pgSize(size).build();
+		PagingModel pagingModel = PagingModel.builder().pageNo(page).pageSize(limit).build();
 
 		return userCredentialService.findUserByEmail(email, pagingModel);
 	}
@@ -180,12 +179,13 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping("/{id}/role/{roleName}")
-	public Mono<AppResponse> assignRole(
+	public Publisher<ResponseEntity<AppResponse>> assignRole(
 			@Parameter(description = "User unique id") @PathVariable("id") @NotBlank String id,
 			@Parameter(description = "Realm role name") @PathVariable("role_name") @NotBlank String roleName,
 			ServerRequest r) {
 
-		return userService.assignRealmRole(id, roleName).map(msg -> this.responseCreator.createAppResponse(msg, r));
+		return userService.assignRealmRole(id, roleName).map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 
 	}
 
@@ -210,13 +210,14 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping("/{id}/role/{roleName}/client/{client_id}")
-	public Mono<AppResponse> assignClientRole(
+	public Publisher<ResponseEntity<AppResponse>> assignClientRole(
 			@Parameter(description = "User unique id") @PathVariable("id") @NotBlank String id,
 			@Parameter(description = "Client role name") @PathVariable("role_name") @NotBlank String roleName,
 			@PathVariable("client_id") String clientId, ServerRequest r) {
 
 		return userService.assignClientRoleToUser(id, roleName, clientId)
-				.map(msg -> this.responseCreator.createAppResponse(msg, r));
+				.map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -240,12 +241,13 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@PostMapping("/{id}/group/{groupId}")
-	public Mono<AppResponse> assignToGroup(
+	public Publisher<ResponseEntity<AppResponse>> assignToGroup(
 			@Parameter(description = "User unique id") @PathVariable("id") @NotBlank String id,
 			@Parameter(description = "Group unique id") @PathVariable("groupId") @NotBlank String groupId,
 			ServerRequest r) {
 
-		return userService.assignToGroup(id, groupId).map(msg -> this.responseCreator.createAppResponse(msg, r));
+		return userService.assignToGroup(id, groupId).map(msg -> this.responseCreator.createAppResponse(msg, r))
+				.map(response -> ResponseEntity.ok(response));
 	}
 
 	/**
@@ -269,7 +271,7 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping("/{username}")
-	public Mono<ResponseEntity<UserVO>> findByUsername(
+	public Publisher<ResponseEntity<UserVO>> findByUsername(
 			@Parameter(description = "username of User to be searched") @PathVariable String username) {
 
 		return userCredentialService.findByUsername(username).map(userFound -> ResponseEntity.ok(userFound));
@@ -296,11 +298,11 @@ public class UserController {
 			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
 
 	@GetMapping("/")
-	public Flux<UserVO> findAllUsers(
-			@RequestParam(name = "page", defaultValue = "1") @Min(value = 1, message = "{page.no.min}") int page,
-			@RequestParam(name = "size", defaultValue = "10") @Max(value = 50, message = "{page.size.max}") int size) {
+	public Publisher<UserVO> findAllUsers(
+			@RequestParam(name = "page", defaultValue = "1") @Size(min = 1, message = "{pagination.size.page}") int page,
+			@RequestParam(name = "limit", defaultValue = "10") @Size(min = 1, max = 50, message = "{pagination.size.limit}") int limit) {
 
-		PagingModel pagingModel = PagingModel.builder().pgNo(page).pgSize(size).build();
+		PagingModel pagingModel = PagingModel.builder().pageNo(page).pageSize(limit).build();
 
 		return userCredentialService.findAll(pagingModel);
 	}
@@ -309,7 +311,7 @@ public class UserController {
 	 * 
 	 * @return
 	 */
-	// @CrossOrigin
+	@ResponseStatus(HttpStatus.CREATED)
 	@Operation(summary = "Create a user", description = "API endpoint to create a user", tags = { "create", "user" })
 
 	@ApiResponses(value = {
@@ -321,15 +323,15 @@ public class UserController {
 			@ApiResponse(responseCode = "409", description = "${api.responseCodes.conflict.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "422", description = "${api.responseCodes.unprocessableEntity.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
 			@ApiResponse(responseCode = "500", description = "${api.responseCodes.server.error.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))),
-			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) })
+			@ApiResponse(responseCode = "503", description = "${api.responseCodes.server.unavalable.description}", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AppResponse.class))) 
+		})
 
 	@PostMapping("/")
-	public Mono<UserVO> createUser(@RequestBody @Valid UserRegistrationRequest regRequest, ServerRequest r) {
+	public Publisher<UserVO> createUser(@RequestBody @Valid UserRegistrationRequest regRequest, ServerRequest r) {
 
-		Role role = getRandomRole();
 		ServerHttpRequest httpRequest = r.exchange().getRequest();
 
-		return userService.signupUser(regRequest, role, httpRequest);
+		return userService.signupUser(regRequest, Role.ROLE_USER, httpRequest);
 
 	}
 

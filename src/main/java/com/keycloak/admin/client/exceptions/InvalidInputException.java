@@ -55,12 +55,22 @@ public class InvalidInputException extends ResponseStatusException {
 	public InvalidInputException(String messagekey, Object[] args, Throwable ex) {
 		super(STATUS, ResourceBundleAccessor.accessMessageInBundle(messagekey, args), ex);
 	}
+	
+	/**
+	 * 
+	 */
+	//@Override
+	public String getErrorCode() {
+		return ErrorCode.INVALID_INPUT_ERR_CODE.getErrCode();
+	}
 
 	/**
 	 * 
 	 */
-	public String getErrorCode() {
-		return "INV-INPUT-001";
+	//@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_INPUT_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

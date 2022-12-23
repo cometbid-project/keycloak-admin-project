@@ -3,6 +3,7 @@
  */
 package com.keycloak.admin.client.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -19,11 +20,11 @@ import lombok.Data;
  */
 @Data
 @XmlRootElement(name = "users")
-@XmlSeeAlso({AuthenticationResponse.class})
+@XmlSeeAlso({ArrayList.class})
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ObjectWithList<T> {
 
-	@XmlElement(name = "list")
+	@XmlElement(name = "user")
 	private List<T> list = null;
 
 	public List<T> getList() {

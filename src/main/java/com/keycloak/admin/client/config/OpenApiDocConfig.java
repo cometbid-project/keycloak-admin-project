@@ -109,10 +109,14 @@ public class OpenApiDocConfig {
 								//
 								.url(apiContactUrl)
 								//
-								.email(apiContactEmail))											
+								.email(apiContactEmail))
+						//
 						.termsOfService(appTermsOfService)
+						//
 						.license(new License()
+								//
 								.name(appLicenseName)
+								//
 								.url(appLicenseUrl)))
 				.externalDocs(new ExternalDocumentation()
 						.description(apiExternalDocDesc)

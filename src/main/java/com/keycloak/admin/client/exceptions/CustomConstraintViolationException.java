@@ -12,6 +12,8 @@ import javax.validation.ConstraintViolationException;
 
 import org.springframework.http.HttpStatus;
 
+import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +23,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class CustomConstraintViolationException extends ConstraintViolationException implements ErrorCode {
+public class CustomConstraintViolationException extends ConstraintViolationException {
 
     /**
      *
@@ -42,8 +44,17 @@ public class CustomConstraintViolationException extends ConstraintViolationExcep
     /**
      *
      */
-    @Override
+    //@Override
     public String getErrorCode() {
-        return ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE;
+        return ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrCode();
     }
+    
+    /**
+	 * 
+	 */
+	//@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

@@ -3,10 +3,7 @@
  */
 package com.keycloak.admin.client.exceptions;
 
-import java.util.Locale;
-
 import org.springframework.http.HttpStatus;
-
 import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
 
 /**
@@ -60,7 +57,15 @@ public class InvalidJwtTokenException extends ApplicationDefinedRuntimeException
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INVALID_JWT_TOKEN_ERR_CODE;
+		return ErrorCode.INVALID_JWT_TOKEN_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_JWT_TOKEN_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

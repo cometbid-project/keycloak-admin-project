@@ -5,13 +5,15 @@ package com.keycloak.admin.client.exceptions;
 
 import org.springframework.http.HttpStatus;
 
+import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
+
 import lombok.Getter;
 
 /**
  * @author Gbenga
  *
  */
-public class InvalidRequestException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class InvalidRequestException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -52,7 +54,15 @@ public class InvalidRequestException extends ApplicationDefinedRuntimeException 
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.BAD_REQUEST_ERR_CODE;
+		return ErrorCode.BAD_REQUEST_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.BAD_REQUEST_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

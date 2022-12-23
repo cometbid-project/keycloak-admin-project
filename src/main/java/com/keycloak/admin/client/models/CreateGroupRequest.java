@@ -8,10 +8,11 @@ import java.io.Serializable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -19,7 +20,9 @@ import lombok.experimental.Accessors;
  * @author Gbenga
  *
  */
+@Builder
 @Value
+@Schema(name = "Create Group", description = "Create Group request model")
 @Accessors(chain = true)
 public class CreateGroupRequest implements Serializable {
 	/**
@@ -27,25 +30,43 @@ public class CreateGroupRequest implements Serializable {
 	 */
 	private static final long serialVersionUID = -4804102702577089856L;
 
-	@Size(min = 1, max = 20)
-	@Schema(name = "groupName", description = "User groups", required = true)
-	@NotBlank(message = "{group_name.notBlank}")
-	@JsonProperty("group_name")
+	@Schema(name = "name", description = "group name", required = true)
+	@Size(min = 1, max = 30, message = "{group.name.size}")
+	@NotBlank(message = "{group.name.notBlank}")
+	@JsonProperty("name")
 	private String groupName;
 
-	/**
-	 * @param roleName
-	 */
-	public CreateGroupRequest(@NotBlank(message = "{group_name.notBlank}") @Size(min = 1, max = 20) String groupName) {
-		super();
-		this.groupName = groupName;
-	}
+	@Schema(name = "description", description = "group description")
+	@Size(max = 70, message = "{group.desc.size}")
+	@JsonProperty("description")
+	private String description;
 
 	/**
 	 * @param groupName
+	 * @param description
 	 */
-	public CreateGroupRequest() {
-		this.groupName = null;
+	@JsonCreator
+	public CreateGroupRequest(
+			@Size(min = 1, max = 30, message = "{group.name.size}") @NotBlank(message = "{group.name.notBlank}") String groupName,
+			@Size(max = 70, message = "{group.desc.size}") String description) {
+		super();
+		this.groupName = groupName;
+		this.description = description;
+	}
+
+	/**
+	 * 
+	 */
+	public CreateGroupRequest(
+			@Size(min = 1, max = 30, message = "{group.name.size}") @NotBlank(message = "{group.name.notBlank}") String groupName) {
+		this(groupName, null);
+	}
+
+	/**
+	 * 
+	 */
+	private CreateGroupRequest() {
+		this(null, null);
 	}
 
 }

@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class UserAlreadyExistException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UserAlreadyExistException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -59,7 +59,16 @@ public class UserAlreadyExistException extends ApplicationDefinedRuntimeExceptio
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.USER_EXIST_ERR_CODE;
+		return ErrorCode.USER_EXIST_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.USER_EXIST_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

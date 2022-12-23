@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class UserProfileLockedException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UserProfileLockedException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 *
@@ -53,13 +53,22 @@ public class UserProfileLockedException extends ApplicationDefinedRuntimeExcepti
 	public UserProfileLockedException(String messagekey, Object[] args, Throwable ex) {
 		super(STATUS, ResourceBundleAccessor.accessMessageInBundle(messagekey, args), ex);
 	}
-
+	
 	/**
 	 * 
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.LOCKED_PROFILE_ERR_CODE;
+		return ErrorCode.LOCKED_PROFILE_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.LOCKED_PROFILE_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

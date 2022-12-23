@@ -13,6 +13,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import com.keycloak.admin.client.models.UserVO;
+import com.keycloak.admin.client.models.Username;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -60,17 +61,17 @@ public class JwtUtil {
 	 * @return the User object extracted from specified token or null if a token is
 	 *         invalid.
 	 */
-	public UserVO parseToken(String token) {
+	public Username parseToken(String token) {
 		try {
 			Claims body = (Claims) extractClaims(token);
 
-			Set<String> roles = Collections.emptySet();
-			roles.add((String) body.get("role"));
+			//Set<String> roles = Collections.emptySet();
+			//roles.add((String) body.get("role"));
 
-			UserVO u = new UserVO();
-			u.setUsername(body.getSubject());
-			u.setId((String) body.get("userId"));
-			u.setRoles(roles);
+			Username u = new Username(body.getSubject(), (String) body.get("role"));
+			//u.setUsername(body.getSubject());
+			//u.setId((String) body.get("userId"));
+			//u.setRoles(roles);
 
 			return u;
 		} catch (JwtException | ClassCastException e) {

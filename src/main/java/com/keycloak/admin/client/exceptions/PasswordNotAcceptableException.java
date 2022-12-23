@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class PasswordNotAcceptableException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class PasswordNotAcceptableException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 *
@@ -59,7 +59,16 @@ public class PasswordNotAcceptableException extends ApplicationDefinedRuntimeExc
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INVALID_PASSWORD_ERR_CODE;
+		return ErrorCode.INVALID_PASSWORD_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_PASSWORD_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

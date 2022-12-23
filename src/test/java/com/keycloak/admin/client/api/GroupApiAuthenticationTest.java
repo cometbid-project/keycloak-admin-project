@@ -331,5 +331,5 @@ class GroupApiAuthenticationTest {
 	          .expectStatus()
 	          .isUnauthorized();
 	    }
-	  }
+	}
 }

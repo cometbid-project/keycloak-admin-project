@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class SessionExpiredException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class SessionExpiredException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -59,7 +59,15 @@ public class SessionExpiredException extends ApplicationDefinedRuntimeException 
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNAUTHORIZED_ACCESS_ERR_CODE;
+		return ErrorCode.UNAUTHORIZED_ACCESS_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNAUTHORIZED_ACCESS_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

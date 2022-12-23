@@ -1,0 +1,48 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/authdb
+
+server.error.include-message: always
+server.error.include-stacktrace: never
+
+server:
+  port: 8082
+  shutdown: graceful
+  http2:
+    enabled: true
+  ssl:
+    key-store-type: PKCS12
+    key-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-keystore.p12
+    key-store-password: cometbid123
+    key-alias: gateway-server    
+    key-password: cometbid123
+    trust-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-trustStore.p12
+    trust-store-password: cometbid123
+    client-auth: none
+    protocol: TLS
+    enabled-protocols:
+    - TLSv1.2
+    enabled: true
+
+reactive.thread.maximum-pool-size: 20
+async.worker.capacity:
+async.worker.size:
+async.worker.max_size:
+async.worker.thread.await_time:
+async.worker.aliveTime:
+async.worker.thread.sleepTime.max:
+event.worker.capacity:
+event.worker.size:
+event.worker.max_size:
+
+logging:
+  level:
+    web: DEBUG
+    root: INFO
+    com.keycloak.admin.client: INFO
+    com.cometbid.oauth2: DEBUG
+    org.springframework.security.*: trace
+    org.springframework: INFO
+    
+    

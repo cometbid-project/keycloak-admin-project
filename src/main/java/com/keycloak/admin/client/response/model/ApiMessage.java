@@ -35,7 +35,7 @@ import lombok.ToString;
  */
 @ToString
 @Data
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper = true)
 @Builder
 @AllArgsConstructor
 //@NoArgsConstructor
@@ -44,106 +44,126 @@ import lombok.ToString;
 //@JsonTypeIdResolver(LowerCaseClassNameResolver.class)
 public class ApiMessage extends ApiResponse implements Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = 2097253529786466907L;
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 2097253529786466907L;
 
-    @JsonProperty(value = "reason")
-    private String reason;
+	@JsonProperty(value = "reason")
+	private String reason;
 
-    @JsonProperty(value = "path")
-    private final String path;
+	/**
+	 * Url of request that produced the error.
+	 */
+	@Builder.Default
+	@JsonProperty(value = "path")
+	private String path = "Not available";
 
-    @JsonProperty(value = "message")
-    private final String message;
+	/**
+	 * Short, human-readable summary of the problem.
+	 */
+	@JsonProperty(value = "message")
+	private final String message;
 
-    @JsonProperty(value = "status")
-    private Integer status; // We'd need it as integer in JSON serialization
+	/**
+	 * Method of request that produced the error.
+	 */
+	@Builder.Default
+	@JsonProperty(value = "method")
+	private String reqMethod = "Not available";
 
-    @JsonIgnore
-    private final HttpStatus httpStatus;
+	/**
+	 * HTTP status code for this occurrence of the problem, set by the origin
+	 * server.
+	 */
+	@JsonProperty(value = "status")
+	private Integer status; // We'd need it as integer in JSON serialization
 
-    @JsonProperty("trace_id")
-    private String traceId;
+	@JsonIgnore
+	private final HttpStatus httpStatus;
 
-    @JsonProperty(value = "detail_message")
-    private String debugMessage;
+	@JsonProperty("trace_id")
+	private String traceId;
 
-    @JsonProperty(value = "timestamp")
-    private final String timestamp;
+	@JsonProperty(value = "detail_message")
+	private String debugMessage;
 
-    @Builder
-    public ApiMessage(HttpStatus httpStatus, String path, String message, String detailMessage) {
-        this.timestamp = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString();
-        this.traceId = ThreadContext.get("X-B3-TraceId");
-        this.httpStatus = httpStatus;
-        this.path = path;
-        this.message = message;
-        this.debugMessage = detailMessage;
-    }
+	@JsonProperty(value = "timestamp")
+	private final String timestamp;
 
-    @JsonCreator
-    public ApiMessage(HttpStatus httpStatus, String path, String message) {
-        this.timestamp = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString();
-        this.traceId = ThreadContext.get("X-B3-TraceId");
-        this.httpStatus = httpStatus;
-        this.path = path;
-        this.message = message;
-    }
+	@Builder
+	public ApiMessage(HttpStatus httpStatus, String reqMethod, String path, String message, String detailMessage) {
+		this.timestamp = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString();
+		this.traceId = ThreadContext.get("X-B3-TraceId");
+		this.httpStatus = httpStatus;
+		this.reqMethod = reqMethod;
+		this.path = path;
+		this.message = message;
+		this.debugMessage = detailMessage;
+	}
 
-    public String getTimestamp() {
-        return timestamp;
-    }
+	@JsonCreator
+	public ApiMessage(HttpStatus httpStatus, String reqMethod, String path, String message) {
+		this.timestamp = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString();
+		this.traceId = ThreadContext.get("X-B3-TraceId");
+		this.httpStatus = httpStatus;
+		this.reqMethod = reqMethod;
+		this.path = path;
+		this.message = message;
+	}
 
-    public String getPath() {
-        return path;
-    }
+	public String getTimestamp() {
+		return timestamp;
+	}
 
-    public int getStatus() {
-        return httpStatus.value();
-    }
+	public String getPath() {
+		return path;
+	}
 
-    public String getReason() {
-        return httpStatus.getReasonPhrase();
-    }
+	public int getStatus() {
+		return httpStatus.value();
+	}
 
-    public String getMessage() {
-        return message;
-    }
+	public String getReason() {
+		return httpStatus.getReasonPhrase();
+	}
 
-    @JsonProperty("type")
-    private ResponseType responseTyp;
+	public String getMessage() {
+		return message;
+	}
 
-    @Builder.Default
-    @JsonProperty("responses")
-    private List<Response> responses = new ArrayList<>();
+	@JsonProperty("type")
+	private ResponseType responseTyp;
 
-    public void add(String path, String code, String message) {
-        this.responses.add(new Response(path, code, message));
-    }
+	@Builder.Default
+	@JsonProperty("responses")
+	private List<Response> responses = new ArrayList<>();
 
-    @ToString
-    @Getter
-    @NoArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = false)
-    public class Response implements Serializable {
+	public void add(String path, String code, String message) {
+		this.responses.add(new Response(path, code, message));
+	}
 
-        /**
-         *
-         */
-        private static final long serialVersionUID = -6444882637188942761L;
+	@ToString
+	@Getter
+	@NoArgsConstructor
+	@JsonIgnoreProperties(ignoreUnknown = false)
+	public class Response implements Serializable {
 
-        private String path;
-        private String code;
-        private String message;
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -6444882637188942761L;
 
-        @JsonCreator
-        Response(String path, String code, String message) {
-            this.path = path;
-            this.code = code;
-            this.message = message;
-        }
+		private String path;
+		private String code;
+		private String message;
 
-    }
+		@JsonCreator
+		Response(String path, String code, String message) {
+			this.path = path;
+			this.code = code;
+			this.message = message;
+		}
+
+	}
 }

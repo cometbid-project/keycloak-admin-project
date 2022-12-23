@@ -27,7 +27,7 @@ import com.keycloak.admin.client.validators.PasswordConstraintValidator;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 public @interface ValidPassword {
 
-	String message() default "${invalid.password}";
+	String message() default "{invalid.password}";
 
 	Class<?>[] groups() default {};
 

@@ -28,10 +28,10 @@ import com.keycloak.admin.client.config.AuthProperties;
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.EmailStatusUpdateRequest;
-import com.keycloak.admin.client.models.EnableTwoFactorAuthResponse;
+import com.keycloak.admin.client.models.EnableMfaResponse;
 import com.keycloak.admin.client.models.LoginLocation;
 import com.keycloak.admin.client.models.SendOtpRequest;
-import com.keycloak.admin.client.models.ProfileStatusUpdateRequest;
+import com.keycloak.admin.client.models.ProfileActivationUpdateRequest;
 import com.keycloak.admin.client.models.StatusUpdateRequest;
 import com.keycloak.admin.client.models.TotpRequest;
 import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
@@ -118,13 +118,13 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
 		Mono<AuthenticationResponse> loginResponse = this.oauthClient.passwordGrantLogin(authRequest)
 				.doOnError(AuthenticationError.class,
-						onError -> processUnauthorizedEvent(username, ipAddress, httpRequest)
-								.subscribe(c -> log.info("Notify user about authentication error")))
+						onError -> processUnauthorizedEvent(username, ipAddress, httpRequest))
+				// .subscribe(c -> log.info("Notify user about authentication error")))
 				.doOnSuccess(resp -> {
 					// that is, only send notification if MFA is disabled
 					if (StringUtils.isNotBlank(resp.getAccessToken())) {
-						doSigninSuccessNotification(username, ipAddress, httpRequest)
-								.subscribe(s -> log.info("Notify user about successful login"));
+						doSigninSuccessNotification(username, ipAddress, httpRequest);
+						// .subscribe(s -> log.info("Notify user about successful login"));
 					}
 				});
 
@@ -168,10 +168,10 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		});
 	}
 
-	private Mono<Void> doSigninSuccessNotification(String username, String ipAddress, ServerHttpRequest httpRequest) {
+	private void doSigninSuccessNotification(String username, String ipAddress, ServerHttpRequest httpRequest) {
 
 		this.eventPublisher.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.USER_AUTHENTICATION_EVENT,
-				StringUtils.EMPTY, "User login successful", ObjectType.USER_AUTH, ContentType.AUTH));
+				StringUtils.EMPTY, "User login was successful", ObjectType.USER_AUTH, ContentType.AUTH));
 
 		UserDTO userDto = this.userLocationService.createDTOUser(username, username, httpRequest);
 
@@ -179,15 +179,16 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		this.eventPublisher.publishEvent(
 				new CustomUserAuthActionEvent(userDto, UserAuthEventTypes.ON_SUCCESS_LOGIN, Arrays.asList()));
 
-		return Mono.empty();
+		log.info("Notify user about successful login");
+		// return Mono.empty();
 	}
 
-	private Mono<Void> processUnauthorizedEvent(String username, String ipAddress, ServerHttpRequest httpRequest) {
+	private void processUnauthorizedEvent(String username, String ipAddress, ServerHttpRequest httpRequest) {
 		log.error("User Authentication experienced suspicious activity");
 
 		this.incrementFailedLogins(ipAddress, username);
 
-		return oauthClient.findUserByUsername(username).flatMap(user -> {
+		oauthClient.findUserByUsername(username).flatMap(user -> {
 			UserDTO userDto = this.userLocationService.createDTOUser(username, username, httpRequest);
 
 			eventPublisher.publishEvent(new CustomUserAuthActionEvent(userDto, UserAuthEventTypes.ON_FAILED_LOGIN));
@@ -226,9 +227,11 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 			}
 
 			return Mono.just(attempts);
-		}).doOnError(ex -> log.error("Error occurred while incrementing failed login count for user", ex))
-				.onErrorResume(handleWebFluxError("increment.failedlogin.error"))
-				.doOnSuccess(k -> log.info("Failed Login attempt recorded..."));
+		}).doOnSuccess(profile -> this.eventPublisher
+				.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
+						"Failed Login attempt recorded...", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occurred while incrementing failed login count for user", ex))
+				.onErrorResume(handleWebFluxError("increment.failedlogin.error"));
 	}
 
 	/**
@@ -248,8 +251,13 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		return monoResult.flatMap(authResponse -> this.doTotpValidation(authResponse, totpRequest, httpRequest))
 				.doOnError(ex -> log.error("Error occured while validating Totp code for user", ex))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("validate.totp.error")))
-				.doOnSuccess(c -> redisCache.removeCacheEntry(totpSessionId)
-						.subscribe(s -> log.info("Remove the totp Cache entry")));
+				.doOnSuccess(c -> {
+					redisCache.removeCacheEntry(totpSessionId);
+
+					this.eventPublisher.publishEvent(
+							new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
+									"Totp code validation was successful...", ObjectType.USER_AUTH, ContentType.AUTH));
+				});
 	}
 
 	private Mono<AuthenticationResponse> doTotpValidation(AuthenticationResponse authResponse, TotpRequest totpRequest,
@@ -279,8 +287,8 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
 		doSigninSuccessNotification(username, ipAddress, httpRequest)
 		// .subscribe(s -> log.info("Notify user about successful login"));
-		).doOnError(AuthenticationError.class, onError -> processUnauthorizedEvent(username, ipAddress, httpRequest)
-				.subscribe(c -> log.info("Notify user about authentication error")));
+		).doOnError(AuthenticationError.class, onError -> processUnauthorizedEvent(username, ipAddress, httpRequest));
+		// .subscribe(c -> log.info("Notify user about authentication error")));
 	}
 
 	private Mono<AuthenticationResponse> mfaCodeValidation(AuthenticationResponse authResponse,
@@ -325,7 +333,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 			}
 
 			return broadcastOtpCode(authResponse, emailOnly, httpRequest);
-		}).thenReturn("Requested OTP code has been sent");
+		}).thenReturn(i8nMessageAccessor.getLocalizedMessage("message.totpCode.sent"));
 	}
 
 	private Mono<Boolean> broadcastOtpCode(AuthenticationResponse authResponse, String emailOnly,
@@ -364,11 +372,12 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
 				log.warn("User DTO {}", userDto);
 
-				eventPublisher
+				this.eventPublisher
 						.publishEvent(new CustomUserAuthActionEvent(userDto, UserAuthEventTypes.ON_OTPCODE_REQUEST));
 
+				log.info("OtpCode has been sent to your designated Email/Phone");
 				return Mono.empty();
-			}).subscribe(s -> log.info("OtpCode has been sent to your designated Email/Phone"));
+			});
 
 		});
 	}
@@ -381,18 +390,22 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	 */
 	@Override
 	@Transactional
-	public Mono<EnableTwoFactorAuthResponse> updateTwoFactorAuth(@NotBlank final String username, boolean enableMFA) {
+	public Mono<EnableMfaResponse> updateMFA(@NotBlank final String username, boolean enableMFA) {
 
 		Mono<String> monoUser = this.oauthClient.updateUserMfa(username, enableMFA);
 
-		String mfaEnabledMessage = "MFA enabled successfully. Please scan the QR code using Google Authenticator app on your phone to use it later to login";
-		String mfaDisabledMessage = "MFA has been disabled";
+		String mfaEnabledMessage = i8nMessageAccessor.getLocalizedMessage("message.mfa.enabled");
+		String mfaDisabledMessage = i8nMessageAccessor.getLocalizedMessage("message.mfa.disabled");
+  
 		return monoUser
-				.map(secret -> new EnableTwoFactorAuthResponse(mfaEnabledMessage,
+				.map(secret -> new EnableMfaResponse(mfaEnabledMessage,
 						this.totpManager.generateQrImage(username, secret)))
-				.defaultIfEmpty(new EnableTwoFactorAuthResponse(mfaDisabledMessage, null))
+				.defaultIfEmpty(new EnableMfaResponse(mfaDisabledMessage, null))
+				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
+						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
+								"User profile MFA update was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while updating Multi-factor auth for user", ex))
-				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("change.user2FA.error")));
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("change.mfa.error")));
 	}
 
 	/**
@@ -400,12 +413,31 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	 */
 	@Override
 	@Transactional
-	public Mono<String> updateUserStatus(@NotNull @Valid final StatusUpdateRequest statusUpdate) {
+	public Mono<String> updateUserStatus(@NotBlank final String username,
+			@NotNull @Valid final StatusUpdateRequest statusUpdate) {
 
-		return this.oauthClient.updateUserStatus(statusUpdate).thenReturn("Profile Status update was successful")
+		return this.oauthClient.updateUserStatus(username, statusUpdate)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("message.user.statusUpdate"))
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"User profile status update was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occured while updating user status", ex))
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("change.userStatus.error")));
+	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	@Transactional
+	public Mono<String> updateUserByIdStatus(@NotBlank final String userId,
+			@NotNull @Valid final StatusUpdateRequest statusUpdate) {
+
+		return this.oauthClient.updateUserByIdStatus(userId, statusUpdate)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("message.user.statusUpdate"))
+				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
+						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
+								"User profile status update was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while updating user status", ex))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("change.userStatus.error")));
 	}
@@ -421,9 +453,9 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		return this.oauthClient.updateOauthUser(userDetailsUpdate, username)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"User profile update was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while updating user details", ex))
-				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("logout.error")));
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("update.userDetails.error")));
 	}
 
 	/**
@@ -431,15 +463,49 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	 */
 	@Override
 	@Transactional
-	public Mono<String> logout(@NotBlank final String username, @NotBlank final String refreshToken) {
+	public Mono<UserVO> updateUserById(@NotBlank final String userId,
+			@NotNull @Valid final UserDetailsUpdateRequest userDetailsUpdate) {
 
-		return this.oauthClient.logout(username, refreshToken).thenReturn("Logout succeeded")
+		return this.oauthClient.updateOauthUserById(userDetailsUpdate, userId)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"User profile update was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occured while updating user details", ex))
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("update.userDetails.error")));
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	@Transactional
+	public Mono<String> signout(@NotBlank final String username, @NotBlank final String refreshToken) {
+
+		return this.oauthClient.signout(username, refreshToken)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("logout.success"))
+				.doOnSuccess(profile -> this.eventPublisher
+						.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT,
+								StringUtils.EMPTY, "User logout successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while logging out user", ex))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("logout.error")));
 	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	@Transactional
+	public Mono<String> logout(@NotBlank final String userId, @NotBlank final String refreshToken) {
+
+		return this.oauthClient.logout(userId, refreshToken)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("logout.success"))
+				.doOnSuccess(profile -> this.eventPublisher
+						.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT,
+								StringUtils.EMPTY, "User logout successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occured while logging out user", ex))
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("logout.error")));
+	}
+
 
 	/**
 	 * 
@@ -452,9 +518,25 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		return keycloakRestService.refreshAccessToken(username, refreshToken)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"Token refresh was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while refreshing token", ex))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("refresh.token.error")));
+	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	@Transactional
+	public Mono<String> revokeToken(@NotBlank final String refreshToken) {
+
+		return keycloakRestService.logout(refreshToken)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("revoke.token.success"))
+				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
+						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
+								"Token revocation was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occured while revoking token", ex))
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("revoke.token.error")));
 	}
 
 	/**
@@ -464,14 +546,13 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	@Transactional
 	@PreAuthorize("hasRole('ADMIN')")
 	public Mono<String> updateEmailStatus(@NotNull @Valid final EmailStatusUpdateRequest statusUpdate) {
-		// TODO Auto-generated method stub
 
 		return this.oauthClient.updateEmailStatus(statusUpdate.getEmail(), statusUpdate.isVerified())
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"User's email status updated successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while updating user email status", ex))
-				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("update.email.status.error")));
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("update.emailStatus.error")));
 	}
 
 	/**
@@ -479,13 +560,15 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	 */
 	@Override
 	@Transactional
-	public Mono<String> enableUserProfile(@NotNull @Valid final ProfileStatusUpdateRequest statusUpdate) {
-		// TODO Auto-generated method stub
+	@PreAuthorize("hasRole('ADMIN')")
+	public Mono<String> enableUserProfile(@NotBlank final String userId, boolean enableProfile) {  
 
+		final ProfileActivationUpdateRequest statusUpdate = new ProfileActivationUpdateRequest(userId, enableProfile);
+		
 		return this.oauthClient.enableOauthUser(statusUpdate)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
-								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
+								"User profile enabled successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
 				.doOnError(ex -> log.error("Error occured while enabling user profile", ex))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("enable.user.error")));
 	}

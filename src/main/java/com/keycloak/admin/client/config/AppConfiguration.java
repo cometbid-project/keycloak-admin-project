@@ -105,21 +105,18 @@ public class AppConfiguration implements EnvironmentAware, ApplicationContextAwa
 	}
 	
 	@Bean
-	public SecretGenerator secretGenerator() {
-		
+	public SecretGenerator secretGenerator() {		
 		return new DefaultSecretGenerator();
 	}
 	
 	@Bean
-	public QrDataFactory qrDataFactory() {
-		
+	public QrDataFactory qrDataFactory() {		
 		return new QrDataFactory(hashingAlgorithm(), defaultDigits, defaultTimePeriod);
 	}
 	
 	@Bean
 	public QrGenerator qrGenerator() {		
 		return new ZxingPngQrGenerator();
-	}
-	
+	}	
 	
 }

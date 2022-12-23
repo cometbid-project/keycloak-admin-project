@@ -21,7 +21,7 @@ public class ResourceBundleAccessor {
 	static {
 		messageSource = new ReloadableResourceBundleMessageSource();
 		// messageSource.setBasename("classpath:business/messages");
-		messageSource.setBasenames("classpath:validation/messages", "classpath:business/messages");
+		messageSource.setBasenames("classpath:validation/messages", "classpath:business/messages", "classpath:ValidationMessages");
 		messageSource.setUseCodeAsDefaultMessage(true);
 		messageSource.setDefaultEncoding("UTF-8");
 		messageSource.setFallbackToSystemLocale(false);

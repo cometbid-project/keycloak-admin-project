@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class UserProfileExpiredException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UserProfileExpiredException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 *
@@ -59,7 +59,15 @@ public class UserProfileExpiredException extends ApplicationDefinedRuntimeExcept
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.EXPIRED_PROFILE_ERR_CODE;
+		return ErrorCode.EXPIRED_PROFILE_ERR_CODE.getErrCode();
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.EXPIRED_PROFILE_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
 }

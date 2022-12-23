@@ -27,7 +27,7 @@ import com.keycloak.admin.client.validators.CustomEmailValidator;
 @Documented
 public @interface ValidEmail {  
 	
-    String message() default "${invalid.email}";
+    String message() default "{invalid.email}";
     
     Class<?>[] groups() default {}; 
     

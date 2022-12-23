@@ -52,13 +52,22 @@ public class ResetPasswordTokenValidationException extends ApplicationDefinedRun
 	public ResetPasswordTokenValidationException(String messagekey, Object[] args, Throwable ex) {
 		super(STATUS, ResourceBundleAccessor.accessMessageInBundle(messagekey, args), ex);
 	}
-
+	
 	/**
 	 * 
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE;
+		return ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.INVALID_ACTIVATION_TOKEN_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

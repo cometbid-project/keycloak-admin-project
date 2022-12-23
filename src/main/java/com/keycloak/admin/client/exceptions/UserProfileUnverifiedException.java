@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class UserProfileUnverifiedException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UserProfileUnverifiedException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -59,7 +59,16 @@ public class UserProfileUnverifiedException extends ApplicationDefinedRuntimeExc
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNVERIFIED_PROFILE_ERR_CODE;
+		return ErrorCode.UNVERIFIED_PROFILE_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNVERIFIED_PROFILE_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

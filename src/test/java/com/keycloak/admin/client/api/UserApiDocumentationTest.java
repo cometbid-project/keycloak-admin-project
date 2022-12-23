@@ -57,6 +57,8 @@ import static org.springframework.security.test.web.reactive.server.SecurityMock
   //UserRouter.class,
   //UserHandler.class,
   UserController.class,
+  UserCredentialService.class,
+  UserCredentialFinderService.class
   //ModelMapperConfiguration.class,
   //IdGeneratorConfiguration.class
 })
@@ -101,7 +103,7 @@ class UserApiDocumentationTest {
   void verifyAndDocumentGetUsers() {
 
     UUID userId = UUID.randomUUID();
-    PagingModel pagingModel = PagingModel.builder().pgNo(0).pgSize(10).build();
+    PagingModel pagingModel = PagingModel.builder().pageNo(0).pageSize(10).build();
     
     UserVO expectedUser = UserBuilder.user().userVo(userId);
     

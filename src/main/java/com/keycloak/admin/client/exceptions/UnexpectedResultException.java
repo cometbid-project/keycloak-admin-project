@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class UnexpectedResultException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class UnexpectedResultException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -59,7 +59,16 @@ public class UnexpectedResultException extends ApplicationDefinedRuntimeExceptio
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.SYS_DEFINED_ERR_CODE;
+		return ErrorCode.SYS_DEFINED_ERR_CODE.getErrCode();
+	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.SYS_DEFINED_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

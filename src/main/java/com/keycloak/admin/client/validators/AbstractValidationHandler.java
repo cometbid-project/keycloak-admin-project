@@ -67,9 +67,12 @@ public abstract class AbstractValidationHandler<T, U extends Validator> {
 	}
 
 	protected Mono<ServerResponse> onValidationErrors(Errors errors, T invalidBody, final ServerRequest request) {
-		ApiError customError = new ApiError(request.path(), ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE,
-				HttpStatus.UNPROCESSABLE_ENTITY, getErrorMessage("global.error.shortMessage"),
-				getErrorMessage("global.error.debugMessage"));
+		final String httpMethod = request.exchange().getRequest().getMethodValue();
+
+		ApiError customError = new ApiError(request.path(), httpMethod,
+				ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrCode(), HttpStatus.UNPROCESSABLE_ENTITY,
+				getErrorMessage("validation.error.debugMessage"),
+				getErrorMessage(ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrMsgKey()));
 
 		for (FieldError error : errors.getFieldErrors()) {
 			customError.addValidationError(error);
@@ -81,8 +84,7 @@ public abstract class AbstractValidationHandler<T, U extends Validator> {
 		AppResponse appError = new AppResponse(currentApiVersion, getErrorMessage("requestValue.constraint.violation"),
 				customError, sendReportUri, HttpStatus.UNPROCESSABLE_ENTITY.name(), moreInfoUrl);
 
-		return ServerResponse.badRequest().contentType(MediaType.APPLICATION_JSON).body(Mono.just(appError),
-				AppResponse.class);
+		return ServerResponse.badRequest().body(Mono.just(appError), AppResponse.class);
 	}
 
 	private String getErrorMessage(String messagekey) {

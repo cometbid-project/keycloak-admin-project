@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
@@ -32,6 +33,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
 import com.keycloak.admin.client.common.utils.YamlPropertySourceFactory;
 import com.keycloak.admin.client.components.TraceIdFilter;
 import com.keycloak.admin.client.exceptions.ActivationTokenValidationException;
@@ -73,7 +80,7 @@ public class GlobalControllerExceptionHandler {
 	@Value("${api.common.help}")
 	private String moreInfoUrl;
 
-	private String errorCode = ErrorCode.SYS_DEFINED_ERR_CODE;
+	private String errorCode = ErrorCode.SYS_DEFINED_ERR_CODE.getErrCode();
 
 	/**
 	 * 
@@ -84,11 +91,10 @@ public class GlobalControllerExceptionHandler {
 	@ResponseStatus(SERVICE_UNAVAILABLE)
 	@ExceptionHandler(value = { Exception.class })
 	public @ResponseBody AppResponse gottaCatchEmAll(Exception ex, ServerHttpRequest request) {
-
-		return createHttpErrorInfo(INTERNAL_SERVER_ERROR, errorCode, request, null, ex);
-
-		// return
-		// Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage()));
+		
+		String message = getErrorMessage(ErrorCode.SYS_DEFINED_ERR_CODE.getErrMsgKey());
+		
+		return createHttpErrorInfo(INTERNAL_SERVER_ERROR, errorCode, request, message, ex);
 	}
 
 	/**
@@ -297,7 +303,7 @@ public class GlobalControllerExceptionHandler {
 	 * @return
 	 */
 	@ResponseStatus(BAD_REQUEST)
-	@ExceptionHandler({ ClientErrorException.class, BadRequestException.class })
+	@ExceptionHandler({ ClientErrorException.class, BadRequestException.class, IllegalArgumentException.class })
 	public @ResponseBody AppResponse handleClientError(ServerWebExchange exchange, Exception ex) {
 
 		AppResponse customError = null;
@@ -310,6 +316,8 @@ public class GlobalControllerExceptionHandler {
 			errorCode = ((BadRequestException) ex).getErrorCode();
 
 			customError = createHttpErrorInfo(BAD_REQUEST, errorCode, request, null, ex);
+		} else {
+			customError = createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, null, ex);
 		}
 
 		return customError;
@@ -338,21 +346,75 @@ public class GlobalControllerExceptionHandler {
 
 		} else if (ex instanceof ConversionFailedException) {
 			ConversionFailedException err = (ConversionFailedException) ex;
-			customError = createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, "Conversion error", ex);
+			customError = createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, "Data conversion error", ex);
 
 			ApiError apiError = (ApiError) customError.getApiResponse();
 			apiError.addValidationError(new ObjectError(err.getValue().toString(), err.getMessage()));
 		} else {
 
-			errorCode = ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE;
+			errorCode = ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrCode();
 			customError = createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, null, ex);
 		}
 
 		return customError;
 	}
 
+	/**
+	 * 
+	 * @param request
+	 * @param ex
+	 * @return
+	 */
+	@ResponseStatus(NOT_ACCEPTABLE)
+	@ExceptionHandler({ JsonParseException.class })
+	public @ResponseBody AppResponse handleJsonParseException(ServerHttpRequest request, JsonParseException ex) {
+
+		String message = getErrorMessage(ErrorCode.JSON_PARSE_ERROR.getErrMsgKey());
+		errorCode = ErrorCode.JSON_PARSE_ERROR.getErrCode();
+
+		log.info("JsonParseException :: request.getMethod(): " + request.getMethod());
+
+		return createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, message, ex);
+		// return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	/**
+	 * 
+	 * @param request
+	 * @param ex
+	 * @return
+	 */
+	@ResponseStatus(UNSUPPORTED_MEDIA_TYPE)
+	@ExceptionHandler({ HttpMessageNotReadableException.class, HttpMediaTypeNotAcceptableException.class,
+			HttpMediaTypeNotSupportedException.class, HttpMessageNotWritableException.class,
+			HttpMediaTypeNotAcceptableException.class })
+	public @ResponseBody AppResponse handleHttpMessageException(ServerHttpRequest request, Exception ex) {
+
+		String message = "Not available";
+
+		if (ex instanceof HttpMessageNotReadableException) {
+			message = getErrorMessage(ErrorCode.HTTP_MESSAGE_NOT_READABLE.getErrMsgKey());
+			errorCode = ErrorCode.HTTP_MESSAGE_NOT_READABLE.getErrCode();
+		} else if (ex instanceof HttpMediaTypeNotAcceptableException) {
+			message = getErrorMessage(ErrorCode.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE.getErrMsgKey());
+			errorCode = ErrorCode.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE.getErrCode();
+		} else if (ex instanceof HttpMediaTypeNotSupportedException) {
+			message = getErrorMessage(ErrorCode.HTTP_MEDIATYPE_NOT_SUPPORTED.getErrMsgKey());
+			errorCode = ErrorCode.HTTP_MEDIATYPE_NOT_SUPPORTED.getErrCode();
+		} else if (ex instanceof HttpMessageNotWritableException) {
+			message = getErrorMessage(ErrorCode.HTTP_MESSAGE_NOT_WRITABLE.getErrMsgKey());
+			errorCode = ErrorCode.HTTP_MESSAGE_NOT_WRITABLE.getErrCode();
+		}
+
+		log.info("Exception :: request.getMethod(): " + request.getMethod());
+
+		return createHttpErrorInfo(HttpStatus.BAD_REQUEST, errorCode, request, message, ex);
+		// return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
 	private AppResponse createHttpErrorInfo(HttpStatus httpStatus, String errorCode, ServerHttpRequest request,
 			String message, Exception ex) {
+
 		final String path = request.getPath().pathWithinApplication().value();
 
 		if (StringUtils.isBlank(message)) {
@@ -363,8 +425,8 @@ public class GlobalControllerExceptionHandler {
 		// return new ApiError(path, httpStatus, message, ex);
 		String traceId = (String) ThreadContext.get(TraceIdFilter.TRACE_ID_KEY);
 
-		return new AppResponse(currentApiVersion, errorCode, httpStatus, message, path, traceId, sendReportUri,
-				moreInfoUrl, ex);
+		return new AppResponse(currentApiVersion, request.getMethodValue(), errorCode, httpStatus, message, path,
+				traceId, sendReportUri, moreInfoUrl, ex);
 	}
 
 	/*
@@ -399,8 +461,12 @@ public class GlobalControllerExceptionHandler {
 
 		String traceId = (String) ThreadContext.get(TraceIdFilter.TRACE_ID_KEY);
 
-		return new AppResponse(currentApiVersion, errorCode, status, detailedDesc, path, reason, traceId, sendReportUri,
-				moreInfoUrl);
+		return new AppResponse(currentApiVersion, request.getMethodValue(), errorCode, status, detailedDesc, path,
+				reason, traceId, sendReportUri, moreInfoUrl);
 	}
 
+	private String getErrorMessage(String messagekey) {
+
+		return ResourceBundleAccessor.accessMessageInBundle(messagekey, new Object[] {});
+	}
 }

@@ -3,38 +3,44 @@
  */
 package com.keycloak.admin.client.models;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 
 /**
  * @author Gbenga
  *
  */
-@Data
+@Value
 @Builder
-@NoArgsConstructor
+//@NoArgsConstructor
+@Schema(name = "Search Criteria", description = "Search user profiles criteria model")
 public class SearchUserRequest {
 
-	@Schema(name = "first name", description = "first name on profiles", example = "John")
-	@Size(min = 1, max = 200, message = "{FirstName.size}")
+	@Schema(name = "first name", description = "first name on profiles", required = true, example = "John")
+	@JsonProperty("first_name")
+	@Size(max = 50, message = "{FirstName.size}")
 	private String firstName;
 
-	@Schema(name = "Last name", description = "last name on profiles", example = "Doe")
-	@Size(min = 1, max = 200, message = "{LastName.size}")
+	@Schema(name = "Last name", description = "last name on profiles", required = true, example = "Doe")
+	@JsonProperty("last_name")
+	@Size(max = 50, message = "{LastName.size}")
 	private String lastName;
 
+	@JsonProperty("email")
 	@Schema(name = "email", description = "email", example = "johndoe@yahoo.ca")
+	@Size(max = 50, message = "{User.email.size}")
 	private String email;
 
+	@JsonProperty("verified_emails")
 	@Schema(name = "Verified Emails?", description = "email verification status", required = true)
-	@NotBlank(message = "{reg.email.notBlank}")
 	private boolean emailVerified;
 
 	/**
@@ -42,12 +48,20 @@ public class SearchUserRequest {
 	 * @param lastName
 	 * @param email
 	 */
+	@JsonCreator
 	public SearchUserRequest(String firstName, String lastName, String email, boolean emailVerified) {
 		super();
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
 		this.emailVerified = emailVerified;
+	}
+
+	/**
+	 * 
+	 */
+	private SearchUserRequest() {
+		this(null, null, null, false);
 	}
 
 }

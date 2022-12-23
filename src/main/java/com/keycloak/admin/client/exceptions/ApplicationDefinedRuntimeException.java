@@ -18,6 +18,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
+
 /**
  * 
  * @author Gbenga
@@ -25,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Getter
 @Setter
-public class ApplicationDefinedRuntimeException extends ResponseStatusException implements ExceptionContext, ErrorCode {
+public class ApplicationDefinedRuntimeException extends ResponseStatusException implements ExceptionContext {
 
 	/**
 	 *
@@ -219,10 +221,19 @@ public class ApplicationDefinedRuntimeException extends ResponseStatusException 
 
 	/**
 	 * 
+	 * @return
 	 */
-	@Override
 	public String getErrorCode() {
-		return ErrorCode.APP_DEFINED_ERR_CODE;
+		return ErrorCode.APP_DEFINED_ERR_CODE.getErrCode();
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.APP_DEFINED_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 	/**

@@ -11,7 +11,6 @@ import java.util.function.Function;
 import org.springframework.util.ReflectionUtils;
 import com.keycloak.admin.client.error.helpers.ErrorPublisher;
 import com.keycloak.admin.client.exceptions.BadRequestException;
-
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;
 
@@ -42,7 +41,7 @@ public class LamdaExceptionHandler {
 		};
 	}
 
-	public static <T, R> Function<T, R> handleCheckedExceptionFunction(
+	public static <T, R> Function<T, Mono<R>> handleCheckedExceptionFunction(
 			LambdaCheckedExceptionFunction<T, R> handlerFunction) {
 
 		return obj -> {
@@ -50,12 +49,12 @@ public class LamdaExceptionHandler {
 			try {
 				r = handlerFunction.apply(obj);
 			} catch (Exception ex) {
-
 				log.error("Exception occured: ", ex);
-				ReflectionUtils.rethrowRuntimeException(ex);
-
+				//ReflectionUtils.rethrowRuntimeException(ex);
+				
+				return Mono.error(ex);
 			}
-			return r;  
+			return Mono.just(r);
 		};
 	}
 
@@ -69,8 +68,6 @@ public class LamdaExceptionHandler {
 
 				log.error("Exception occured: ", ex);
 				ReflectionUtils.rethrowRuntimeException(ex);
-
-				// throw new RuntimeException(ex);
 			}
 		};
 	}
@@ -86,7 +83,6 @@ public class LamdaExceptionHandler {
 				log.error("Exception occured: ", ex);
 				ReflectionUtils.rethrowRuntimeException(ex);
 
-				// throw new RuntimeException(ex);
 			}
 		};
 	}

@@ -112,9 +112,8 @@ public class KeycloakRestService {
 		Mono<String> monoAccessCode = reactiveClient.performPostFormToMono(webClient, URI.create(keycloakTokenUri),
 				refreshTokenFormData, String.class, headers, null);
 
-		return monoAccessCode.map(accessCode -> {
-			return KeycloakJwtTokenUtil.generateLoginResponse(accessCode, Collections.emptyList(), username);
-		});
+		return monoAccessCode.map(accessCode -> KeycloakJwtTokenUtil.generateLoginResponse(accessCode,
+				Collections.emptyList(), username));
 	}
 
 	/**

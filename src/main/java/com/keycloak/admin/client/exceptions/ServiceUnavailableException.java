@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class ServiceUnavailableException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class ServiceUnavailableException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -53,13 +53,22 @@ public class ServiceUnavailableException extends ApplicationDefinedRuntimeExcept
 	public ServiceUnavailableException(String messagekey, Object[] args, Throwable ex) {
 		super(STATUS, ResourceBundleAccessor.accessMessageInBundle(messagekey, args), ex);
 	}
-
+	
 	/**
 	 * 
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE;
+		return ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

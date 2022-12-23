@@ -11,61 +11,60 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort.Order;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.Value;
 
 /**
  * @author Gbenga
  *
  */
-@Data
+@Value
 @Builder
 @ToString(includeFieldNames = true)
-@NoArgsConstructor
-@AllArgsConstructor
+//@NoArgsConstructor
+//@AllArgsConstructor
 public class OrderingModel {
 
-	@Builder.Default
-	private Set<Order> sortOrder = new HashSet<>();
+	private Set<Order> sortOrder;
 
 	public boolean addOrderToList(Order order) {
-
-		Set<Order> newSet = new HashSet<>();
-		newSet.add(order);
-
-		return sortOrder.addAll(newSet);
+		return sortOrder.add(order);
 	}
 
-	public Set<Order> createDefaultSortOrder(String field) {
-		// TODO Auto-generated method stub
+	public boolean createSortOrderOnField(String field) {
 
-		addOrderToList(Order.by(field));
-		return sortOrder;
+		return addOrderToList(Order.by(field));
 	}
 
 	public Set<Order> createMappedSortOrder(Map<String, String> mappedFields) {
 		// TODO Auto-generated method stub
 
-		if (sortOrder == null) {
-			return new HashSet<Order>();
-		}
+		return this.sortOrder.stream().map(order -> {
+			// order.getProperty();
+			String field = mappedFields.get(order.getProperty());
 
-		sortOrder = sortOrder.stream().map(order -> {
-			order.getProperty();
-			String property = mappedFields.get(order.getProperty());
-
-			if (StringUtils.isNotBlank(property)) {
-				return order.withProperty(property);
-			}
-			return null;
+			return StringUtils.isNotBlank(field) ? order.withProperty(field) : null;
 
 		}).filter(Objects::nonNull).collect(Collectors.toUnmodifiableSet());
+	}
 
-		return sortOrder;
+	/**
+	 * @param sortOrder
+	 */
+	public OrderingModel(Set<Order> sortOrder) {
+		super();
+		this.sortOrder = sortOrder;
+	}
+
+	/**
+	 * 
+	 */
+	public OrderingModel() {
+		this(new HashSet<>());
 	}
 
 }

@@ -33,7 +33,7 @@ public class RandomGenerator {
 	private static SecureRandom secureRandom = new SecureRandom();
 	private static Random globalRandom = new Random();
 
-	private static final int[] passwordLengths = { 8, 9, 10, 11 };
+	private static final int[] passwordLengths = { 8, 9, 10, 11, 15 };
 
 	private final static int[] lengthArray = { 66, 72, 67, 77, 55 };
 

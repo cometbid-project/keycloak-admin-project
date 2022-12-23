@@ -3,23 +3,43 @@
  */
 package com.keycloak.admin.client.models;
 
+import javax.validation.constraints.NotBlank;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
+import lombok.Value;
 
 /**
  * @author Gbenga
  *
  */
-@Data
+@Value
+@Builder
+@Schema(name = "Password reset token", description = "Password reset token update request model")
 public class PasswordResetTokenResponse {
 
-	public PasswordResetTokenResponse(String id) { 
-		// TODO Auto-generated constructor stub
-		this.sessionId = id;
+	/**
+	 * @param sessionId
+	 */
+	@JsonCreator
+	public PasswordResetTokenResponse(@NotBlank(message = "{password.session.notBlank}") String sessionId) {
+		super();
+		this.sessionId = sessionId;
+	}
+
+	/**
+	 * 
+	 */
+	private PasswordResetTokenResponse() {
+		this(null);
 	}
 
 	@JsonProperty("session_id")
+	@NotBlank(message = "{password.session.notBlank}")
+	@Schema(name = "Session token", description = "Reset password session token", required = true)
 	private String sessionId;
 
 }

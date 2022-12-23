@@ -9,6 +9,7 @@ import java.io.Serializable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.keycloak.admin.client.validators.qualifiers.ValidEmail;
 import com.keycloak.admin.client.validators.qualifiers.ValidPassword;
@@ -40,11 +41,8 @@ public class UserRegistrationRequest implements Serializable {
 	 * @param email
 	 * @param password
 	 */
-	public UserRegistrationRequest() {
-		this.firstName = null;
-		this.lastName = null;
-		this.email = null;
-		this.password = null;
+	private UserRegistrationRequest() {
+		this(null, null, null, null);
 	}
 
 	/**
@@ -54,11 +52,12 @@ public class UserRegistrationRequest implements Serializable {
 	 * @param password
 	 */
 	@Builder
+	@JsonCreator
 	public UserRegistrationRequest(
 			@NotBlank(message = "{FirstName.notBlank}") @Size(min = 1, max = 200, message = "{FirstName.size}") String firstName,
 			@NotBlank(message = "{LastName.notBlank}") @Size(min = 1, max = 200, message = "{LastName.size}") String lastName,
-			@ValidEmail(message = "{User.email.invalid}") @NotBlank(message = "{reg.email.notBlank}") String email,
-			@Size(min = 6, message = "{Size.userDto.password}") @NotBlank(message = "{reg.password.notBlank}") String password) {
+			@ValidEmail @NotBlank(message = "{reg.email.notBlank}") @Size(max = 50, message = "{User.email.size}") String email,
+			@ValidPassword @Size(min = 8, max = 50, message = "{password.size}") @NotBlank(message = "{reg.password.notBlank}") String password) {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
@@ -68,25 +67,26 @@ public class UserRegistrationRequest implements Serializable {
 	@Schema(name = "first name", description = "first name on profiles", required = true, example = "John")
 	@JsonProperty("first_name")
 	@NotBlank(message = "{FirstName.notBlank}")
-	@Size(min = 1, max = 200, message = "{FirstName.size}")
+	@Size(min = 1, max = 50, message = "{FirstName.size}")
 	private String firstName;
 
 	@Schema(name = "Last name", description = "last name on profiles", required = true, example = "Doe")
 	@JsonProperty("last_name")
 	@NotBlank(message = "{LastName.notBlank}")
-	@Size(min = 1, max = 200, message = "{LastName.size}")
+	@Size(min = 1, max = 50, message = "{LastName.size}")
 	private String lastName;
 
 	@Schema(name = "email", description = "email", required = true, example = "johndoe@yahoo.ca")
 	@JsonProperty("email")
-	@ValidEmail(message = "{User.email.invalid}")
+	@Size(max = 50, message = "{User.email.size}")
+	@ValidEmail
 	@NotBlank(message = "{reg.email.notBlank}")
 	private String email;
 
-	@Schema(name = "password", description = "chosen password", required = true, example = "makintoch@2013")
+	@Schema(name = "password", description = "chosen password", required = true, example = "Makintoch@2013")
 	@JsonProperty("password")
-	@ValidPassword(message = "{req.new.password.valid}")
-	@Size(min = 6, message = "{Size.userDto.password}")
+	@ValidPassword
+	@Size(min = 8, max = 50, message = "{password.size}")
 	@NotBlank(message = "{reg.password.notBlank}")
 	private String password;
 

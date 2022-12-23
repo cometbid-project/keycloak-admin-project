@@ -8,24 +8,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import com.keycloak.admin.client.common.utils.PaginationHelper;
+import lombok.Value;
 
 /**
  * @author Gbenga
  *
  */
-@Data
+@Value
 @Builder
 @ToString(includeFieldNames = true)
-@NoArgsConstructor
-@AllArgsConstructor
+//@NoArgsConstructor
+//@AllArgsConstructor
 public class PagingModel {
 
-	@Builder.Default
-	private int pgNo = 1;
-
-	@Builder.Default
-	private int pgSize = 10;
+	private int pageNo;
+	private int pageSize;
 
 	public static String getDefault() {
 		int page = 1;
@@ -33,19 +30,31 @@ public class PagingModel {
 		return "(" + page + "," + limit + ")";
 	}
 
-	public int getPgNo() {
-		if (pgNo < 1) {
-			pgNo = 1;
-		}
-		return PaginationHelper.adjustPageNo(pgNo);
+	public int getPageNo() {
+		return pageNo - 1;
 	}
 
-	public int getPgSize() {
-		if (pgSize < 1) {
-			pgSize = 10;
-		}
+	public int getPageSize() {
+		return pageSize;
+	}
 
-		return pgSize;
+	/**
+	 * @param pageNo
+	 * @param pageSize
+	 */
+	public PagingModel(int pageNo, int pageSize) {
+		super();
+		this.pageNo = pageNo;
+		this.pageSize = pageSize;
+	}
+
+	/**
+	 * 
+	 */
+	public PagingModel() {
+		super();
+		this.pageNo = 1;
+		this.pageSize = 10;
 	}
 
 }

@@ -64,7 +64,7 @@ import com.keycloak.admin.client.models.mappers.UserMapper;
 import com.keycloak.admin.client.oauth.service.ActivationTokenServiceImpl;
 import com.keycloak.admin.client.oauth.service.GatewayRedisCache;
 import com.keycloak.admin.client.oauth.service.KeycloakOauthClient;
-import com.keycloak.admin.client.oauth.service.RedisCacheUtil;
+import com.keycloak.admin.client.oauth.service.ReactiveRedisComponent;
 import com.keycloak.admin.client.oauth.service.RoleServiceImpl;
 import com.keycloak.admin.client.oauth.service.it.RoleService;
 import com.keycloak.admin.client.token.utils.TotpManagerImpl;
@@ -252,6 +252,7 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateRealmRoleAccessIsGrantedForAdmin() {
 		  		  
 		  String roleName = "ROLE_APP";
+		  String roleDesc = "Role description";
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -262,7 +263,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);
 	    
-		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName);
+		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName, roleDesc);
 		    
 		  StepVerifier.create(roleService.createRealmRole(realmRole))
 					  .expectNextMatches(result -> result != null && 
@@ -282,6 +283,8 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateClientRoleAccessIsGrantedForAdmin() {
 		  		  
 		  String roleName = "CLIENT_ROLE_APP";
+		  String roleDesc = "Client Role description";
+		  
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -295,7 +298,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);		  
 		  
-		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName);		  
+		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName, roleDesc);		  
 		    
 		  StepVerifier.create(roleService.createClientRole(clientRole, clientId))
 					  .expectNextMatches(result -> result != null && 
@@ -315,6 +318,7 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateRealmRoleAccessIsDeniedForUserAndCurator() {
 		  		  
 		  String roleName = "ROLE_APP";
+		  String roleDesc = "Role description";
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -325,7 +329,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);
 	    
-		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName);
+		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName, roleDesc);
 		  
 		  StepVerifier.create(roleService.createRealmRole(realmRole))
 	        		.verifyError(AccessDeniedException.class);
@@ -340,6 +344,8 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateClientRoleAccessIsDeniedForUserAndCurator() {
 		  		  
 		  String roleName = "CLIENT_ROLE_APP";
+		  String roleDesc = "Client Role description";
+		  
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -353,7 +359,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);		  
 		  
-		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName);		  
+		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName, roleDesc);		  
 		    
 		  StepVerifier.create(roleService.createClientRole(clientRole, clientId))
 	        		.verifyError(AccessDeniedException.class);
@@ -367,6 +373,8 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateRoleAccessIsDeniedForUnauthenticated() {
 		  		  
 		  String roleName = "ROLE_APP";
+		  String roleDesc = "Role description";
+		  
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -377,7 +385,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);
 	    
-		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName);
+		  CreateRoleRequest realmRole = new CreateRoleRequest(roleName, roleDesc);
 		  
 		  StepVerifier.create(roleService.createRealmRole(realmRole))
 	        		.verifyError(AccessDeniedException.class);
@@ -391,6 +399,8 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateClientRoleAccessIsDeniedForUnauthenticated() {
 		  		  
 		  String roleName = "CLIENT_ROLE_APP";
+		  String roleDesc = "Client Role description";
+		  
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  
@@ -404,7 +414,7 @@ class RoleServiceAuthorizationTest {
 		  when(roleResource.toRepresentation())
 					.thenReturn(newRoleRepresentation);		  
 		  
-		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName);
+		  CreateRoleRequest clientRole = new CreateRoleRequest(roleName, roleDesc);
 		  
 		  StepVerifier.create(roleService.createClientRole(clientRole, clientId))
   					.verifyError(AccessDeniedException.class);
@@ -420,6 +430,8 @@ class RoleServiceAuthorizationTest {
 	  void verifyCreateRealmRoleWithExistingRolenameAccessIsGrantedForAdmin() {
 		  		  
 		  String roleName = RoleBuilder.getRandomRole().getName();
+		  String roleDesc = "Role description";
+		  
 		  RoleRepresentation newRoleRepresentation = RoleBuilder.role()
 		    		.withName(roleName).roleRepresentation(UUID.randomUUID(), false);
 		  

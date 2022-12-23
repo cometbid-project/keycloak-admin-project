@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class BlockedCredentialsAttemptsLoginWarning extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class BlockedCredentialsAttemptsLoginWarning extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -47,7 +47,7 @@ public class BlockedCredentialsAttemptsLoginWarning extends ApplicationDefinedRu
 	/**
 	 *
 	 * @param messagekey
-	 * @param args  
+	 * @param args
 	 * @param ex
 	 */
 	public BlockedCredentialsAttemptsLoginWarning(String messagekey, Object[] args, Throwable ex) {
@@ -59,7 +59,16 @@ public class BlockedCredentialsAttemptsLoginWarning extends ApplicationDefinedRu
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE;
+		return ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.UNAVAILABLE_SERVICE_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }

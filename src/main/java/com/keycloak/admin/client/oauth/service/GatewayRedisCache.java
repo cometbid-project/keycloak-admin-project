@@ -34,11 +34,11 @@ public class GatewayRedisCache {
 	private Long passwordResetSessionTTL;
 	private Long pricingPlanTTL;
 
-	private final RedisCacheUtil cacheUtil;
+	private final ReactiveRedisComponent cacheUtil;
 
 	private final static String BLOCKED_IPADDRESSES = "blocked_ips";
 
-	public GatewayRedisCache(@Qualifier("redis") RedisCacheUtil cacheUtil, Environment environment) {
+	public GatewayRedisCache(@Qualifier("redis") ReactiveRedisComponent cacheUtil, Environment environment) {
 		this.cacheUtil = cacheUtil;
 		this.environment = environment;
 	}

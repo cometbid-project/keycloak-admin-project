@@ -5,6 +5,8 @@ spring:
     default-property-inclusion: non-default
     serialization:
       indent-output: true
+  profiles:
+    active: dev,prod
   redis:
     host: localhost
     port: 6379
@@ -20,42 +22,22 @@ spring:
       enabled: true
   security:
     oauth2:
-      client:
-        registration:
-          keycloak:
-            client-id: admin-client
-            client-secret: df26d9d0-09e7-491f-b9a2-3a54535a48e8
-            scope: openid, profile, email, roles      
-         
-server:
-  port: 8082
-  shutdown: graceful
-  http2:
-    enabled: true
-  ssl:
-    key-store-type: PKCS12
-    key-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-keystore.p12
-    key-store-password: cometbid123
-    key-alias: gateway-server    
-    key-password: cometbid123
-    trust-store: file:///C:/Users/Gbenga/Documents/workspace-spring-tool-suite-4-4.15.1.RELEASE/spring-cloud-grpc/mtls-certs/keys/gateway-server/gateway-trustStore.p12
-    trust-store-password: cometbid123
-    client-auth: none
-    protocol: TLS
-    enabled-protocols:
-    - TLSv1.2
-    enabled: true
+      resourceserver.jwt.issuer-uri: "http://localhost:8081/auth/realms/demo"
+      #client:
+        #registration:
+         # keycloak:
+          #  client-id: admin-client
+          #  client-secret: df26d9d0-09e7-491f-b9a2-3a54535a48e8
+          #  scope: openid, profile, email, roles      
 
-server.error.include-message: always
-server.error.include-stacktrace: never
-
-app.auth.tokenSecret: 926D96C90030DD58429D2751AC1BDBBC
-app.auth.tokenExpirationMsec: 864000000
-
+app:
+  auth.tokenExpirationMsec: 864000000
+  auth.tokenSecret: 926D96C90030DD58429D2751AC1BDBBC
+  auth.emailVerification.path: /v1/auth/emailVerification
+  auth.changePassword.path: /v1/auth/changePassword
+  auth.enableLocation.path: /v1/auth/enableNewLoc
+   
 geo.ip.lib.enabled: false
-app.auth.emailVerification.path: /v1/auth/emailVerification
-app.auth.changePassword.path: /v1/auth/changePassword
-app.auth.enableLocation.path: /v1/auth/enableNewLoc
               
 springdoc:
   # swagger-ui custom path
@@ -73,11 +55,11 @@ springdoc:
     groups:
       enabled: true 
   packagesToScan: com.keycloak.admin.client.controllers
-  pathsToMatch: /v1/**
+  pathsToMatch: /api/**
   
-  
-local.server.apidoc.url: https://service-name/v1/api-ui.html
-test.server.apidoc.url: https://service-name/v1/api-ui.html
+   
+local.server.apidoc.url: https://service-name/api/v1/api-ui.html
+test.server.apidoc.url: https://service-name/api/v1/api-ui.html
 
 api:
   common:
@@ -148,13 +130,12 @@ api:
 #spring.redis.lettuce.pool.min-idle=
 #spring.redis.lettuce.pool.time-between-eviction-runs=
 #spring.redis.lettuce.shutdown-timeout=
-
-    
+  
 logging:
   level:
     web: DEBUG
     root: INFO
-    com.cometbid.oauth2: DEBUG
+    com.keycloak.admin.client: DEBUG
     org.springframework.security.*: trace
     org.springframework: INFO
 
@@ -168,20 +149,8 @@ totp.session.ttl: 1800
 password.reset.session.ttl: 1800
 pricing.plan.token.ttl: 1800
 
-
 #management.endpoints.web.exposure.include=*
 management.endpoints.web.exposure.include: health, info, metrics
 management.endpoints.web.base-path: /manage
-
-reactive.thread.maximum-pool-size: 20
-async.worker.capacity:
-async.worker.size:
-async.worker.max_size:
-async.worker.thread.await_time:
-async.worker.aliveTime:
-async.worker.thread.sleepTime.max:
-event.worker.capacity:
-event.worker.size:
-event.worker.max_size:
 
        

@@ -7,8 +7,6 @@ package com.keycloak.admin.client.oauth.service;
 
 import static com.keycloak.admin.client.error.helpers.ErrorPublisher.*;
 import static com.keycloak.admin.client.error.handlers.ExceptionHandler.*;
-
-import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
 
 import java.time.Duration;
@@ -98,7 +96,7 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 	public Mono<UserVO> signupUser(@NotNull @Valid UserRegistrationRequest regRequest, Role role,
 			@NotNull final ServerHttpRequest r) {
 
-		String username = regRequest.getEmail();
+		String username = regRequest.getEmail().trim().toLowerCase();
 		SocialLink socialLink = new SocialLink();
 
 		UserRepresentation newUser = UserMapper.createUserRepresentation(regRequest, role);

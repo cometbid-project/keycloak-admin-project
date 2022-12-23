@@ -68,6 +68,9 @@ public class AuthProperties {
 
 	@Value("${keycloak.client.threadPoolSize:20}")
 	private Integer threadPoolSize;
+	
+	@Value("${keycloak.client.connectionPoolSize:10}")
+	private Integer connectionPoolSize;
 	// ----------------------------------------------------------------
 
 	@Value("${keycloak.auth.authorize-url-pattern}")

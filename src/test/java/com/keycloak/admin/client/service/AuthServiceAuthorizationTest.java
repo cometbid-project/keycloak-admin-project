@@ -70,9 +70,9 @@ import com.keycloak.admin.client.exceptions.SessionExpiredException;
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.EmailStatusUpdateRequest;
-import com.keycloak.admin.client.models.EnableTwoFactorAuthResponse;
+import com.keycloak.admin.client.models.EnableMfaResponse;
 import com.keycloak.admin.client.models.LoginLocation;
-import com.keycloak.admin.client.models.ProfileStatusUpdateRequest;
+import com.keycloak.admin.client.models.ProfileActivationUpdateRequest;
 import com.keycloak.admin.client.models.SendOtpRequest;
 import com.keycloak.admin.client.models.StatusUpdateRequest;
 import com.keycloak.admin.client.models.TotpRequest;
@@ -715,7 +715,7 @@ class AuthServiceAuthorizationTest {
 				.thenReturn(Mono.just(totpSecret));
 		when(totpManager.generateQrImage(anyString(), anyString())).thenReturn(QrImage);
 
-		Mono<EnableTwoFactorAuthResponse> monoResponse = userAuthService.updateTwoFactorAuth(username, enableMfa);
+		Mono<EnableMfaResponse> monoResponse = userAuthService.updateTwoFactorAuth(username, enableMfa);
 
 		StepVerifier.create(monoResponse)
 				// .expectNextCount(1)
@@ -751,7 +751,7 @@ class AuthServiceAuthorizationTest {
 		when(keycloakClient.updateUserMfa(anyString(), ArgumentMatchers.eq(enableMfa))).thenReturn(Mono.empty());
 		when(totpManager.generateQrImage(anyString(), anyString())).thenReturn(QrImage);
 
-		Mono<EnableTwoFactorAuthResponse> monoResponse = userAuthService.updateTwoFactorAuth(username, enableMfa);
+		Mono<EnableMfaResponse> monoResponse = userAuthService.updateTwoFactorAuth(username, enableMfa);
 
 		StepVerifier.create(monoResponse)
 				// .expectNextCount(1)
@@ -947,10 +947,10 @@ class AuthServiceAuthorizationTest {
 		String username = userRepresentation.getUsername();
 		String refreshToken = authResponse.getRefreshToken();
 
-		when(keycloakClient.enableOauthUser(any(ProfileStatusUpdateRequest.class))).thenReturn(Mono.just("SUCCESS")); 
+		when(keycloakClient.enableOauthUser(any(ProfileActivationUpdateRequest.class))).thenReturn(Mono.just("SUCCESS")); 
 
 		boolean enableProfile = true;
-		ProfileStatusUpdateRequest statusChangeRequest = new ProfileStatusUpdateRequest(userVO.getEmail(), enableProfile);		
+		ProfileActivationUpdateRequest statusChangeRequest = new ProfileActivationUpdateRequest(userVO.getEmail(), enableProfile);		
 		Mono<String> monoResponse = userAuthService.enableUserProfile(statusChangeRequest);   
 
 		StepVerifier.create(monoResponse)
@@ -981,10 +981,10 @@ class AuthServiceAuthorizationTest {
 		String username = userRepresentation.getUsername();
 		String refreshToken = authResponse.getRefreshToken();
 
-		when(keycloakClient.enableOauthUser(any(ProfileStatusUpdateRequest.class))).thenReturn(Mono.just("SUCCESS")); 
+		when(keycloakClient.enableOauthUser(any(ProfileActivationUpdateRequest.class))).thenReturn(Mono.just("SUCCESS")); 
 
 		boolean enableProfile = true;
-		ProfileStatusUpdateRequest statusChangeRequest = new ProfileStatusUpdateRequest(userVO.getEmail(), enableProfile);		
+		ProfileActivationUpdateRequest statusChangeRequest = new ProfileActivationUpdateRequest(userVO.getEmail(), enableProfile);		
 		Mono<String> monoResponse = userAuthService.enableUserProfile(statusChangeRequest);   
 
 		StepVerifier.create(monoResponse)

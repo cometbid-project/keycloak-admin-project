@@ -25,7 +25,6 @@ import com.keycloak.admin.client.common.service.it.ActivityLogService;
 import com.keycloak.admin.client.common.utils.DateUtil;
 import com.keycloak.admin.client.common.utils.RandomGenerator;
 import com.keycloak.admin.client.components.AuthenticatedUserMgr;
-import com.keycloak.admin.client.components.CustomMessageSourceAccessor;
 import com.keycloak.admin.client.models.mappers.ActivityLogMapper;
 
 import lombok.extern.log4j.Log4j2;

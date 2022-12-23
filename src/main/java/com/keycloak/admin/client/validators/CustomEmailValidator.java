@@ -6,6 +6,7 @@ package com.keycloak.admin.client.validators;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import com.keycloak.admin.client.validators.qualifiers.ValidEmail;
@@ -23,7 +24,7 @@ public class CustomEmailValidator implements ConstraintValidator<ValidEmail, Str
 
 	@Override
 	public boolean isValid(String email, ConstraintValidatorContext context) {
-		if (email == null) {
+		if (StringUtils.isBlank(email)) { 
 			return true;
 		}
 		return (validateEmail(email));

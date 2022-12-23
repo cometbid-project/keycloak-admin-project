@@ -30,9 +30,9 @@ public class AppResponse {
 	@JsonProperty("response")
 	private final ApiResponse apiResponse;
 
-	public AppResponse(final String apiVersion, String errorCode, final int code, final String message,
-			final String domain, final String reason, final String traceId, final String errorReportUri,
-			final String moreInfoUrl) {
+	public AppResponse(final String apiVersion, String httpMethod, String errorCode, final int code,
+			final String message, final String domain, final String reason, final String traceId,
+			final String errorReportUri, final String moreInfoUrl) {
 
 		String status = HttpStatus.valueOf(code).name();
 
@@ -40,16 +40,16 @@ public class AppResponse {
 				.moreInfo(moreInfoUrl + status).sendReport(errorReportUri + "?id=" + traceId).shortMessage(message)
 				.build();
 
-		this.apiResponse = new ApiError(domain, errorCode, reason, code, message, null);
+		this.apiResponse = new ApiError(domain, httpMethod, errorCode, reason, code, message, null);
 	}
 
-	public static AppResponse fromDefaultAttributeMap(final String apiVersion, String errorCode,
+	public static AppResponse fromDefaultAttributeMap(final String apiVersion, String httpMethod, String errorCode,
 			final Map<String, Object> defaultErrorAttributes, final String sendReportBaseUri,
 			final String moreInfoUrl) {
 
 		// original attribute values are documented in
 		// org.springframework.boot.web.servlet.error.DefaultErrorAttributes
-		return new AppResponse(apiVersion, errorCode, ((Integer) defaultErrorAttributes.get("status")),
+		return new AppResponse(apiVersion, httpMethod, errorCode, ((Integer) defaultErrorAttributes.get("status")),
 				(String) defaultErrorAttributes.getOrDefault("message", "no message available"),
 				(String) defaultErrorAttributes.getOrDefault("path", "no domain available"),
 				(String) defaultErrorAttributes.getOrDefault("error", "no reason available"),
@@ -62,11 +62,11 @@ public class AppResponse {
 		return Map.of("meta", metadata, "response", apiResponse);
 	}
 
-	public AppResponse(String currentApiVersion, String errorCode, HttpStatus httpStatus, String message, String path,
-			final String traceId, String sendReportUri, String moreInfoUrl, Exception ex) {
+	public AppResponse(String currentApiVersion, String httpMethod, String errorCode, HttpStatus httpStatus,
+			String message, String path, final String traceId, String sendReportUri, String moreInfoUrl, Exception ex) {
 		// TODO Auto-generated constructor stub
 		super();
-		this.apiResponse = new ApiError(path, errorCode, httpStatus, message, ex.getMessage());
+		this.apiResponse = new ApiError(path, httpMethod, errorCode, httpStatus, message, ex.getMessage());
 		this.metadata = AppResponseMetadata.builder().apiVersion(currentApiVersion).status(httpStatus.name())
 				.moreInfo(moreInfoUrl + httpStatus.name()).sendReport(sendReportUri + "?id=" + traceId)
 				.shortMessage(message).build();

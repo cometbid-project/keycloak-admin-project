@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.NotNull;
+
 import org.springframework.data.redis.core.ReactiveListOperations;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -26,19 +30,17 @@ import reactor.core.publisher.Mono;
  */
 @Log4j2
 @Service("redis")
-public class RedisCacheUtil {
+public class ReactiveRedisComponent {
 
-	private final ReactiveRedisTemplate<String, Object> redisValueTemplate;
-
-	private ReactiveValueOperations<String, Object> reactiveValueOps;
-
-	private ReactiveListOperations<String, String> reactiveListOps;
-
+	private final ReactiveRedisOperations<String, Object> redisOperations;
 	private final ReactiveStringRedisTemplate redisListTemplate;
 
-	public RedisCacheUtil(ReactiveRedisTemplate<String, Object> redisValueTemplate,
-			ReactiveRedisTemplate<String, String> redisStringTemplate, ReactiveStringRedisTemplate redisListTemplate) {
-		this.redisValueTemplate = redisValueTemplate;
+	// private ReactiveValueOperations<String, Object> reactiveValueOps;
+	// private ReactiveListOperations<String, String> reactiveListOps;
+
+	public ReactiveRedisComponent(ReactiveRedisOperations<String, Object> redisOperations,
+			ReactiveStringRedisTemplate redisListTemplate) {
+		this.redisOperations = redisOperations;
 		this.redisListTemplate = redisListTemplate;
 	}
 
@@ -47,9 +49,8 @@ public class RedisCacheUtil {
 	 */
 	@PostConstruct
 	public void init() {
-		reactiveValueOps = redisValueTemplate.opsForValue();
-
-		reactiveListOps = redisListTemplate.opsForList();
+		// reactiveValueOps = redisOperations.opsForValue();
+		// reactiveListOps = redisListTemplate.opsForList();
 	}
 
 	/**
@@ -61,7 +62,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> stack(@NonNull String key, @NonNull String str) {
 
-		Mono<Long> lPush = reactiveListOps.leftPush(key, str).log(String.format("Prepend Key(%s) entry", key));
+		Mono<Long> lPush = redisListTemplate.opsForList().leftPush(key, str)
+				.log(String.format("Prepend Key(%s) entry", key));
 		return lPush;
 	}
 
@@ -75,7 +77,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> stack(@NonNull String key, @NonNull String... strValues) {
 
-		Mono<Long> lPush = reactiveListOps.leftPushAll(key, strValues)
+		Mono<Long> lPush = redisListTemplate.opsForList().leftPushAll(key, strValues)
 				.log(String.format("Prepend Key(%s) entries", key));
 		return lPush;
 	}
@@ -90,7 +92,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> stack(@NonNull String key, @NonNull List<String> listValues) {
 
-		Mono<Long> lPush = reactiveListOps.leftPushAll(key, listValues)
+		Mono<Long> lPush = redisListTemplate.opsForList().leftPushAll(key, listValues)
 				.log(String.format("Prepend Key(%s) entries", key));
 		return lPush;
 	}
@@ -104,7 +106,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> stackIfPresent(@NonNull String key, String value) {
 
-		Mono<Long> lPush = reactiveListOps.leftPushIfPresent(key, value)
+		Mono<Long> lPush = redisListTemplate.opsForList().leftPushIfPresent(key, value)
 				.log(String.format("Prepend Key(%s) entry only if Present", key));
 		return lPush;
 	}
@@ -118,7 +120,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> append(@NonNull String key, String value) {
 
-		Mono<Long> rPush = reactiveListOps.rightPush(key, value).log(String.format("Append Key(%s) entry", key));
+		Mono<Long> rPush = redisListTemplate.opsForList().rightPush(key, value)
+				.log(String.format("Append Key(%s) entry", key));
 		return rPush;
 	}
 
@@ -131,7 +134,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> appendIfPresent(@NonNull String key, String value) {
 
-		Mono<Long> rPush = reactiveListOps.rightPushIfPresent(key, value)
+		Mono<Long> rPush = redisListTemplate.opsForList().rightPushIfPresent(key, value)
 				.log(String.format("Append Key(%s) entry only if Present", key));
 		return rPush;
 	}
@@ -146,7 +149,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> append(@NonNull String key, @NonNull String... strValues) {
 
-		Mono<Long> rPush = reactiveListOps.rightPushAll(key, strValues)
+		Mono<Long> rPush = redisListTemplate.opsForList().rightPushAll(key, strValues)
 				.log(String.format("Append Key(%s) array of entries", key));
 		return rPush;
 	}
@@ -161,7 +164,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> append(@NonNull String key, @NonNull List<String> list) {
 
-		Mono<Long> rPush = reactiveListOps.rightPushAll(key, list)
+		Mono<Long> rPush = redisListTemplate.opsForList().rightPushAll(key, list)
 				.log(String.format("Append Key(%s) Collection of entries", key));
 		return rPush;
 	}
@@ -176,9 +179,10 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> get(@NonNull String key, @NonNull String entryValue) {
 
-		Mono<String> result = reactiveListOps.indexOf(key, entryValue)
+		Mono<String> result = redisListTemplate.opsForList().indexOf(key, entryValue)
 				.log(String.format("find index of %s by Key(%s)", entryValue, key))
-				.flatMap(index -> reactiveListOps.index(key, index)).log(String.format("use index %s to locate Value"));
+				.flatMap(index -> redisListTemplate.opsForList().index(key, index))
+				.log(String.format("use index %s to locate Value"));
 
 		return result;
 	}
@@ -192,12 +196,12 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> delete(@NonNull String key, Long count, @NonNull String entryValue) {
 
-		Mono<Long> result = reactiveListOps.remove(key, count, entryValue)
+		Mono<Long> result = redisListTemplate.opsForList().remove(key, count, entryValue)
 				.log(String.format("remove %s entry of %s by Key(%s)", count, entryValue, key));
 
 		return result;
 	}
-	
+
 	/**
 	 * Removes the given key and it's corresponding entries.
 	 * 
@@ -207,9 +211,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Long> deleteAll(@NonNull String key, @NonNull List<String> list) {
 
-		Mono<Long> result = reactiveListOps.delete(key)
-				.log(String.format("Key(%s) entries removed", key))
-				.flatMap(index -> this.append(key, list))
+		Mono<Long> result = redisListTemplate.opsForList().delete(key)
+				.log(String.format("Key(%s) entries removed", key)).flatMap(index -> this.append(key, list))
 				.log(String.format("Key(%s) re-created, and initialized"));
 
 		return result;
@@ -227,7 +230,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> stackAndPush(@NonNull String srcKey, @NonNull String destKey) {
 
-		Mono<String> lPush = reactiveListOps.rightPopAndLeftPush(srcKey, destKey).log(String.format(
+		Mono<String> lPush = redisListTemplate.opsForList().rightPopAndLeftPush(srcKey, destKey).log(String.format(
 				"Removes Source Key(%s) Last entry, Add to Destination Key(%s) as Last entry", srcKey, destKey));
 		return lPush;
 	}
@@ -243,7 +246,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> detachAndPush(@NonNull String srcKey, @NonNull String destKey, long timeoutInSecs) {
 
-		Mono<String> lPush = reactiveListOps.rightPopAndLeftPush(srcKey, destKey, Duration.ofSeconds(timeoutInSecs))
+		Mono<String> lPush = redisListTemplate.opsForList()
+				.rightPopAndLeftPush(srcKey, destKey, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format(
 						"Removes Source Key(%s) Last entry, Add to Destination Key(%s) as Last entry with timeout %d",
 						srcKey, destKey, timeoutInSecs));
@@ -259,7 +263,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> pop(@NonNull String key) {
 
-		Mono<String> lPop = reactiveListOps.leftPop(key).log(String.format("Removes Key(%s) entry in FIFO order", key));
+		Mono<String> lPop = redisListTemplate.opsForList().leftPop(key)
+				.log(String.format("Removes Key(%s) entry in FIFO order", key));
 		return lPop;
 	}
 
@@ -273,7 +278,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> pop(@NonNull String key, long timeoutInSecs) {
 
-		Mono<String> lPop = reactiveListOps.leftPop(key, Duration.ofSeconds(timeoutInSecs))
+		Mono<String> lPop = redisListTemplate.opsForList().leftPop(key, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Removes Key(%s) entry in FIFO order", key));
 		return lPop;
 	}
@@ -286,7 +291,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> detach(@NonNull String key) {
 
-		Mono<String> rPop = reactiveListOps.rightPop(key)
+		Mono<String> rPop = redisListTemplate.opsForList().rightPop(key)
 				.log(String.format("Removes Key(%s) entry in LIFO order", key));
 		return rPop;
 	}
@@ -301,7 +306,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<String> detach(@NonNull String key, long timeoutInSecs) {
 
-		Mono<String> rPop = reactiveListOps.rightPop(key, Duration.ofSeconds(timeoutInSecs))
+		Mono<String> rPop = redisListTemplate.opsForList().rightPop(key, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Removes Key(%s) entry in LIFO order", key));
 		return rPop;
 	}
@@ -315,7 +320,8 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Long> decrementThis(@NonNull String key) {
-		Mono<Long> lPush = reactiveValueOps.decrement(key).log(String.format("Key(%s) entry Decremented by 1", key));
+		Mono<Long> lPush = redisOperations.opsForValue().decrement(key)
+				.log(String.format("Key(%s) entry Decremented by 1", key));
 		return lPush;
 	}
 
@@ -327,7 +333,7 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Long> decrementThis(@NonNull String key, Long delta) {
-		Mono<Long> lPush = reactiveValueOps.decrement(key, delta)
+		Mono<Long> lPush = redisOperations.opsForValue().decrement(key, delta)
 				.log(String.format("Key(%s) entry Decremented by %d", key, delta));
 		return lPush;
 	}
@@ -339,7 +345,8 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Long> incrementThis(@NonNull String key) {
-		Mono<Long> lPush = reactiveValueOps.increment(key).log(String.format("Key(%s) entry Incremented by 1", key));
+		Mono<Long> lPush = redisOperations.opsForValue().increment(key)
+				.log(String.format("Key(%s) entry Incremented by 1", key));
 		return lPush;
 	}
 
@@ -351,7 +358,7 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Long> incrementThis(@NonNull String key, Long delta) {
-		Mono<Long> lPush = reactiveValueOps.increment(key, delta)
+		Mono<Long> lPush = redisOperations.opsForValue().increment(key, delta)
 				.log(String.format("Key(%s) entry Incremented by %d", key, delta));
 		return lPush;
 	}
@@ -365,7 +372,7 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Double> incrementThis(@NonNull String key, Double delta) {
-		Mono<Double> lPush = reactiveValueOps.increment(key, delta)
+		Mono<Double> lPush = redisOperations.opsForValue().increment(key, delta)
 				.log(String.format("Key(%s) entry Incremented by %1$,.2f", key, delta));
 		return lPush;
 	}
@@ -379,7 +386,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull String pojo) {
 
-		Mono<Boolean> lPush = reactiveValueOps.setIfAbsent(key, pojo).log(String.format("Key(%s) entry Pushed", key));
+		Mono<Boolean> lPush = redisOperations.opsForValue().setIfAbsent(key, pojo)
+				.log(String.format("Key(%s) entry Pushed", key));
 		return lPush;
 	}
 
@@ -392,7 +400,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull Object pojo, long timeoutInSecs) {
 
-		Mono<Boolean> lPush = reactiveValueOps.setIfAbsent(key, pojo, Duration.ofSeconds(timeoutInSecs))
+		Mono<Boolean> lPush = redisOperations.opsForValue().setIfAbsent(key, pojo, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Key(%s) entry Pushed %d sec timeout", key, timeoutInSecs));
 		return lPush;
 	}
@@ -406,7 +414,8 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Boolean> putPojo(@NonNull String key, @NonNull Object pojo) {
-		Mono<Boolean> lPush = reactiveValueOps.set(key, pojo).log(String.format("Key(%s) entry Pushed", key));
+		Mono<Boolean> lPush = redisOperations.opsForValue().set(key, pojo)
+				.log(String.format("Key(%s) entry Pushed", key));
 		return lPush;
 	}
 
@@ -419,7 +428,7 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Boolean> putPojo(@NonNull String key, @NonNull Object pojo, long timeoutInSecs) {
-		Mono<Boolean> lPush = reactiveValueOps.set(key, pojo, Duration.ofSeconds(timeoutInSecs))
+		Mono<Boolean> lPush = redisOperations.opsForValue().set(key, pojo, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Key(%s) entry Pushed with %d sec timeout", key, timeoutInSecs));
 		return lPush;
 	}
@@ -432,7 +441,7 @@ public class RedisCacheUtil {
 	 * @return
 	 */
 	public Mono<Boolean> putMultiPojo(@NonNull Map<String, Object> multiKeyValues) {
-		Mono<Boolean> lPush = reactiveValueOps.multiSet(multiKeyValues)
+		Mono<Boolean> lPush = redisOperations.opsForValue().multiSet(multiKeyValues)
 				.log(String.format("Key(%s) entries Pushed", multiKeyValues.keySet()));
 		return lPush;
 	}
@@ -445,7 +454,7 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Object> getPojo(@NonNull String key) {
 
-		Mono<Object> lPop = reactiveValueOps.get(key).log(String.format("Key(%s) entry Popped", key));
+		Mono<Object> lPop = redisOperations.opsForValue().get(key).log(String.format("Key(%s) entry Retrieved", key));
 		return lPop;
 	}
 
@@ -457,8 +466,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<List<Object>> getMultiPojo(@NonNull Collection<String> multikeys) {
 
-		Mono<List<Object>> lPush = reactiveValueOps.multiGet(multikeys)
-				.log(String.format("Key(%s) entries Popped", multikeys));
+		Mono<List<Object>> lPush = redisOperations.opsForValue().multiGet(multikeys)
+				.log(String.format("Key(%s) entries Retrieved", multikeys));
 		return lPush;
 	}
 
@@ -471,8 +480,8 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Object> replacePojo(@NonNull String key, @NonNull Object pojo) {
 
-		Mono<Object> lPop = reactiveValueOps.getAndSet(key, pojo)
-				.log(String.format("Old Key(%s) entry Popped and new entry Pushed", key));
+		Mono<Object> lPop = redisOperations.opsForValue().getAndSet(key, pojo)
+				.log(String.format("Old Key(%s) entry Retrieved and new entry Saved", key));
 		return lPop;
 	}
 
@@ -484,8 +493,52 @@ public class RedisCacheUtil {
 	 */
 	public Mono<Boolean> deletePojo(@NonNull String key) {
 
-		Mono<Boolean> lPop = reactiveValueOps.delete(key).log(String.format("Key(%s) entry Deleted", key));
+		Mono<Boolean> lPop = redisOperations.opsForValue().delete(key).log(String.format("Key(%s) entry Deleted", key));
 		return lPop;
 	}
 
+	/**
+	 * Set key and value into a hash key
+	 * 
+	 * @param key     key value - must not be null.
+	 * @param hashKey hash key value - must not be null.
+	 * @param val     Object value
+	 * @return Mono of object
+	 */
+	public Mono<Object> set(String key, String hashKey, Object val) {
+		return redisOperations.opsForHash().put(key, hashKey, val).map(b -> val)
+				.log(String.format("Key entry(%s) under %s Saved", hashKey, key));
+	}
+
+	/**
+	 * @param key key value - must not be null.
+	 * @return Flux of Object
+	 */
+	public Flux<Object> get(@NotNull String key) {
+		return redisOperations.opsForHash().values(key).log(String.format("All entries under %s Retrieved", key));
+	}
+
+	/**
+	 * Get value for given hashKey from hash at key.
+	 * 
+	 * @param key     key value - must not be null.
+	 * @param hashKey hash key value - must not be null.
+	 * @return Object
+	 */
+	public Mono<Object> get(String key, Object hashKey) {
+		return redisOperations.opsForHash().get(key, hashKey)
+				.log(String.format("Key entry(%s) under %s Retrieved", hashKey, key));
+	}
+
+	/**
+	 * Delete a key that contained in a hash key.
+	 * 
+	 * @param key     key value - must not be null.
+	 * @param hashKey hash key value - must not be null.
+	 * @return 1 Success or 0 Error
+	 */
+	public Mono<Long> remove(String key, Object hashKey) {
+		return redisOperations.opsForHash().remove(key, hashKey)
+				.log(String.format("Key entry(%s) under %s Deleted", hashKey, key));
+	}
 }

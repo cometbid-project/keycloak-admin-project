@@ -166,8 +166,7 @@ public class ActivationTokenServiceImpl implements ActivationTokenService {
 
 			return doPostValidationUpdate(p);
 		}).thenReturn(i8nMessageAccessor.getLocalizedMessage("token.validation.success"))
-				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("token.validation.error")));
-				
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("token.validation.error")));				
 	}
 
 	private Mono<String> doPostValidationUpdate(ActivationToken activationToken) {

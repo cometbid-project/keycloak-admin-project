@@ -85,12 +85,12 @@ import ua_parser.Parser;
 @PreAuthorize("isAnonymous() or isAuthenticated()")
 public class PasswordServiceImpl implements PasswordMgtService {
 
-	private final Parser parser;
+	//private final Parser parser;
 	private final AuthProfile dataStore;
 	private final UserLocationService userLocationService;
 	private final PasswordResetTokenRepository passwordTokenRepository;
 	private final CustomMessageSourceAccessor i8nMessageAccessor;
-	private final DatabaseReader databaseReader;
+	//private final DatabaseReader databaseReader;
 	private final KeycloakOauthClient keycloakClient;
 	private final GatewayRedisCache redisCache;
 	private final ApplicationEventPublisher eventPublisher;
@@ -109,17 +109,17 @@ public class PasswordServiceImpl implements PasswordMgtService {
 	 * @param dataStore
 	 */
 	public PasswordServiceImpl(ApplicationEventPublisher eventPublisher, UserLocationService userLocationService,
-			GatewayRedisCache redisCache, @Qualifier("GeoIPCity") DatabaseReader databaseReader,
+			GatewayRedisCache redisCache, //@Qualifier("GeoIPCity") DatabaseReader databaseReader,
 			PasswordResetTokenRepository passwordTokenRepository, KeycloakOauthClient keycloakClient,
-			CustomMessageSourceAccessor i8nMessageAccessor, AuthProfile dataStore, Parser parser,
+			CustomMessageSourceAccessor i8nMessageAccessor, AuthProfile dataStore, //Parser parser,
 			ReactiveMongoTemplate mongoTemplate) {
 
-		this.parser = parser;
+		//this.parser = parser;
 		this.dataStore = dataStore;
 		this.userLocationService = userLocationService;
 		this.passwordTokenRepository = passwordTokenRepository;
 		this.i8nMessageAccessor = i8nMessageAccessor;
-		this.databaseReader = databaseReader;
+		//this.databaseReader = databaseReader;
 		this.keycloakClient = keycloakClient;
 		this.redisCache = redisCache;
 		this.eventPublisher = eventPublisher;
@@ -142,7 +142,7 @@ public class PasswordServiceImpl implements PasswordMgtService {
 			final String emailAddr = user.getEmail();
 
 			// Send an email to provided emailAddr containing the recovered username
-			UserDTO userDto = this.userLocationService.createDTOUser(username, username, httpRequest);
+			UserDTO userDto = this.userLocationService.createDTOUser(username, emailAddr, httpRequest);
 
 			eventPublisher.publishEvent(
 					new CustomUserAuthActionEvent(userDto, UserAuthEventTypes.ON_USERNAME_REQUEST_COMPLETE));

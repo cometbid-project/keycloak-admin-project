@@ -23,8 +23,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import com.github.javafaker.Faker;
 import com.keycloak.admin.client.common.enums.Role;
 import com.keycloak.admin.client.common.enums.SocialProvider;
+import com.keycloak.admin.client.common.enums.StatusType;
 import com.keycloak.admin.client.common.utils.DateUtil;
+import com.keycloak.admin.client.common.utils.RandomGenerator;
+import com.keycloak.admin.client.models.AuthenticationRequest;
+import com.keycloak.admin.client.models.EmailStatusUpdateRequest;
+import com.keycloak.admin.client.models.ForgotUsernameRequest;
+import com.keycloak.admin.client.models.PasswordResetTokenResponse;
+import com.keycloak.admin.client.models.PasswordUpdateRequest;
+import com.keycloak.admin.client.models.ProfileActivationUpdateRequest;
+import com.keycloak.admin.client.models.ResetPasswordFinalRequest;
+import com.keycloak.admin.client.models.ResetPasswordRequest;
 import com.keycloak.admin.client.models.SearchUserRequest;
+import com.keycloak.admin.client.models.StatusUpdateRequest;
+import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
 import com.keycloak.admin.client.models.UserRegistrationRequest;
 import com.keycloak.admin.client.models.UserVO;
 
@@ -41,6 +53,8 @@ public class UserBuilder {
 
 	private String id;
 
+	private String username;
+
 	private String email = "john.doe@example.com";
 
 	private String password = "secret";
@@ -50,6 +64,8 @@ public class UserBuilder {
 	private String lastName = "Doe";
 
 	private String displayName = "John";
+
+	private String status;
 
 	private List<Role> roles = new ArrayList<>();
 
@@ -64,7 +80,10 @@ public class UserBuilder {
 		this.firstName = faker.name().firstName();
 		this.lastName = faker.name().lastName();
 		this.email = faker.internet().emailAddress();
-		this.password = faker.internet().password(8, 30);
+
+		this.username = this.email;
+		this.password = RandomGenerator.generateRandomPassword();
+		this.status = getRandomStatus().toString();
 
 		this.roles.add(Role.ROLE_ADMIN);
 	}
@@ -74,7 +93,12 @@ public class UserBuilder {
 	}
 
 	public UserBuilder withId(UUID id) {
-		this.id = id.toString();
+		this.id = id == null ? null : id.toString();
+		return this;
+	}
+
+	public UserBuilder withUsername(String username) {
+		this.username = username;
 		return this;
 	}
 
@@ -103,19 +127,41 @@ public class UserBuilder {
 		return this;
 	}
 
+	public UserBuilder withStatus(String statusType) {
+		this.status = statusType;
+		return this;
+	}
+
 	public UserBuilder withDisplayName() {
 		this.displayName = displayName(firstName, lastName);
 		return this;
 	}
 
+	public UserVO userVo() {
+		return userVo(null);
+	}
+
 	public UserVO userVo(UUID id) {
 		Set<String> mySet = this.roles.stream().map(c -> c.getName()).collect(Collectors.toSet());
+		SocialLinkRepresentation socialLinkRep = socialLinkRepresentation();
 
-		return UserVO.builder().id(id.toString()).email(email)
-				.username(email).accountLocked(false)
-				.firstName(firstName).lastName(lastName) 
-				.createdDate(LocalDateTime.now()).disabled(false)
-				.password(password).emailVerified(false).roles(mySet)
+		LocalDateTime creationDate = DateUtil
+				.getLocalDateTimeFromLongMillisecs(faker.date().past(30, TimeUnit.DAYS).getTime());
+
+		LocalDateTime lastModifiedDate = DateUtil
+				.getLocalDateTimeFromLongMillisecs(faker.date().past(1, TimeUnit.DAYS).getTime());
+
+		return UserVO.builder().id(id != null ? id.toString() : null).username(username).roles(mySet).email(email)
+				.firstName(firstName).lastName(lastName).displayName(displayName(firstName, lastName))
+				.emailVerified(Boolean.TRUE).disabled(!Boolean.TRUE)
+				// Set empty to avoid leakage
+				.password(password).createdDate(creationDate)
+				.socialProvider(socialLinkRep != null ? socialLinkRep.getSocialProvider() : null)
+				.providerUserId(socialLinkRep != null ? socialLinkRep.getSocialUserId() : null)
+				.lastModifiedDate(lastModifiedDate)
+				// .accountLocked(isAccountLocked)
+				// .expired(isAccountExpired)
+				// .enableMFA(isMfaEnabled)
 				.build();
 	}
 
@@ -125,7 +171,7 @@ public class UserBuilder {
 		UserRepresentation representation = new UserRepresentation();
 		representation.setId(id.toString());
 		representation.setEmail(email);
-		representation.setUsername(email);
+		representation.setUsername(username);
 		representation.setRealmRoles(myRoleList);
 		representation.setEmailVerified(false);
 		representation.setCreatedTimestamp(System.currentTimeMillis());
@@ -134,10 +180,10 @@ public class UserBuilder {
 		representation.setFirstName(this.firstName);
 
 		representation.setSocialLinks(getSocialRepresentationLinks());
-		
+
 		String pastDate = String.valueOf(faker.date().past(120, 90, TimeUnit.DAYS).getTime());
 		representation.singleAttribute(LAST_EXPIRYDATE, pastDate);
-		
+
 		representation.setCredentials(null);
 
 		return representation;
@@ -154,6 +200,63 @@ public class UserBuilder {
 
 		return UserRegistrationRequest.builder().firstName(this.firstName).lastName(this.lastName).email(this.email)
 				.password(this.password).build();
+	}
+
+	public UserDetailsUpdateRequest buildUpdate() {
+
+		return UserDetailsUpdateRequest.builder().firstName(this.firstName).lastName(this.lastName).build();
+	}
+
+	public StatusUpdateRequest buildStatusUpdate() {
+
+		return StatusUpdateRequest.builder().username(this.username).status(this.status).build();
+	}
+
+	public EmailStatusUpdateRequest buildEmailUpdate() {
+
+		return EmailStatusUpdateRequest.builder().email(this.email).verified(faker.bool().bool()).build();
+	}
+
+	public ForgotUsernameRequest buildUsernameRequest() {
+
+		return ForgotUsernameRequest.builder().email(this.email).build();
+	}
+
+	public SearchUserRequest buildSearchUserRequest() {
+
+		return SearchUserRequest.builder().firstName(this.firstName).lastName(this.lastName).email(this.email)
+				.emailVerified(faker.bool().bool()).build();
+	}
+
+	public ResetPasswordRequest buildPasswordResetRequest() {
+
+		return ResetPasswordRequest.builder().email(this.email).build();
+	}
+
+	public ResetPasswordFinalRequest buildFinalPasswordResetRequest(String sessionId) {
+
+		return ResetPasswordFinalRequest.builder().username(this.username).newPassword(this.password)
+				.sessionId(sessionId).build();
+	}
+
+	public PasswordResetTokenResponse buildPasswordResetToken(String sessionId) {
+
+		return PasswordResetTokenResponse.builder().sessionId(sessionId).build();
+	}
+
+	public PasswordUpdateRequest buildPasswordUpdateRequest(boolean genPassword, String newPassword) {
+
+		return PasswordUpdateRequest.builder().oldPassword(this.password).newPassword(genPassword ? newPassword : null)
+				.build();
+	}
+
+	public ProfileActivationUpdateRequest buildProfileActivationRequest() {
+
+		return ProfileActivationUpdateRequest.builder().username(this.username).enable(faker.bool().bool()).build();
+	}
+
+	public AuthenticationRequest loginRequest() {
+		return new AuthenticationRequest(this.username, this.password);
 	}
 
 	private SocialLinkRepresentation socialLinkRepresentation() {
@@ -188,14 +291,26 @@ public class UserBuilder {
 
 		return WordUtils.capitalizeFully(formattedFirstName + " " + formattedLastName);
 	}
-	
+
 	public List<UserRepresentation> userRepresentationList(int size) {
 		List<UserRepresentation> userList = new ArrayList<>();
-				
-		for(int i = 0; i < size; ++i) {
-			userList.add(userRepresentation(UUID.randomUUID())); 
+
+		for (int i = 0; i < size; ++i) {
+			userList.add(userRepresentation(UUID.randomUUID()));
 		}
-		
+
 		return userList;
 	}
+
+	public static StatusType getRandomStatus() {
+		Set<String> setOfStatus = StatusType.getAllTypes();
+		int num = setOfStatus.size();
+
+		List<String> arrayList = List.copyOf(setOfStatus);
+
+		int i = ThreadLocalRandom.current().nextInt(0, num - 1);
+
+		return StatusType.fromString(arrayList.get(i));
+	}
+
 }

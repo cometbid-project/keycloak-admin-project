@@ -8,17 +8,21 @@ import java.io.Serializable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+import lombok.Builder;
+import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
  * @author Gbenga
  *
  */
-@Data
+@Value
+@Builder
+@Schema(name = "Create Role", description = "Create Role request model")
 @Accessors(chain = true)
 public class CreateRoleRequest implements Serializable {
 	/**
@@ -26,25 +30,43 @@ public class CreateRoleRequest implements Serializable {
 	 */
 	private static final long serialVersionUID = -53466764341987983L;
 
-	@NotBlank(message = "{role_name.notBlank}")
-	@Schema(name = "roleName", description = "User roles", required = true)
-	@Size(min = 1, max = 30)
-	@JsonProperty("role_name")
+	@Schema(name = "name", description = "role name", required = true)
+	@Size(min = 1, max = 30, message = "{role.name.size}")
+	@NotBlank(message = "{role.name.notBlank}")
+	@JsonProperty("name")
 	private String roleName;
+
+	@Size(max = 70, message = "{role.desc.size}")
+	@Schema(name = "description", description = "role description")
+	@JsonProperty("description")
+	private String description;
 
 	/**
 	 * @param roleName
+	 * @param description
 	 */
-	public CreateRoleRequest(@NotBlank(message = "{role_name.notBlank}") @Size(min = 1, max = 30) String roleName) {
+	@JsonCreator
+	public CreateRoleRequest(
+			@Size(min = 1, max = 30, message = "{role.name.size}") @NotBlank(message = "{role.name.notBlank}") String roleName,
+			@Size(max = 70, message = "{role.desc.size}") String description) {
 		super();
 		this.roleName = roleName;
+		this.description = description;
 	}
 
 	/**
-	 * @param groupName
+	 * 
 	 */
-	public CreateRoleRequest() {
-		this(null);
+	public CreateRoleRequest(
+			@Size(min = 1, max = 30, message = "{role.name.size}") @NotBlank(message = "{role.name.notBlank}") String roleName) {
+		this(roleName, null);
+	}
+
+	/**
+	 * 
+	 */
+	private CreateRoleRequest() {
+		this(null, null);
 	}
 
 }

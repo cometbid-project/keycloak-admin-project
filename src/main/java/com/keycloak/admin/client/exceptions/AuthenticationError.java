@@ -11,7 +11,7 @@ import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
  * @author Gbenga
  *
  */
-public class AuthenticationError extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class AuthenticationError extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -43,7 +43,7 @@ public class AuthenticationError extends ApplicationDefinedRuntimeException impl
 	public AuthenticationError(String messagekey, Object[] args) {
 		this(messagekey, args, null);
 	}
-
+  
 	/**
 	 *
 	 * @param messagekey
@@ -68,6 +68,16 @@ public class AuthenticationError extends ApplicationDefinedRuntimeException impl
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.AUTHENTICATION_ERR_CODE;
+		return ErrorCode.AUTHENTICATION_ERR_CODE.getErrCode();
 	}
+	
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.AUTHENTICATION_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
+	}
+
 }

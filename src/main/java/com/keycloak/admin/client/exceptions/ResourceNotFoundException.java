@@ -13,7 +13,7 @@ import lombok.Getter;
  * @author Gbenga
  *
  */
-public class ResourceNotFoundException extends ApplicationDefinedRuntimeException implements ErrorCode {
+public class ResourceNotFoundException extends ApplicationDefinedRuntimeException {
 
 	/**
 	 * 
@@ -64,7 +64,16 @@ public class ResourceNotFoundException extends ApplicationDefinedRuntimeExceptio
 	 */
 	@Override
 	public String getErrorCode() {
-		return ErrorCode.GENERIC_NOT_FOUND_ERR_CODE;
+		return ErrorCode.GENERIC_NOT_FOUND_ERR_CODE.getErrCode();
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public String getErrorMessage() {
+		String msgKey = ErrorCode.GENERIC_NOT_FOUND_ERR_CODE.getErrMsgKey();
+		return ResourceBundleAccessor.accessMessageInBundle(msgKey, new Object[] {});
 	}
 
 }
