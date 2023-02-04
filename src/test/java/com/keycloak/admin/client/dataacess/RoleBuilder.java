@@ -15,12 +15,10 @@ import java.util.stream.Collectors;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 
 import com.github.javafaker.Faker;
 import com.keycloak.admin.client.common.enums.Role;
 import com.keycloak.admin.client.models.CreateRoleRequest;
-import com.keycloak.admin.client.models.GroupVO;
 import com.keycloak.admin.client.models.RoleVO;
 
 import lombok.Data;
@@ -77,7 +75,8 @@ public class RoleBuilder {
 
 	public RoleVO roleVo() {
 
-		return RoleVO.builder().id(id == null ? null : id.toString()).name(this.name).description(this.description)
+		return RoleVO.builder().id(id == null ? null : id.toString())
+				.name(this.name).description(this.description)
 				.attributes(this.attributes).build();
 	}
 
@@ -98,7 +97,8 @@ public class RoleBuilder {
 
 	public static Role getRandomRoleExclude(String roleToExclude) {
 
-		List<String> arrayList = Role.getAllTypes().stream().filter(r -> !r.equalsIgnoreCase(roleToExclude))
+		List<String> arrayList = Role.getAllTypes().stream()
+				.filter(r -> !r.equalsIgnoreCase(roleToExclude))
 				.collect(Collectors.toList());
 
 		int num = arrayList.size();
@@ -139,7 +139,8 @@ public class RoleBuilder {
 		List<String> arrayList = List.copyOf(setOfRoles);
 
 		return arrayList.stream()
-				.map(roleName -> RoleBuilder.role().withName(roleName).roleRepresentation(UUID.randomUUID(), false))
+				.map(roleName -> RoleBuilder.role().withName(roleName)
+						.roleRepresentation(UUID.randomUUID(), false))
 				.collect(Collectors.toList());
 	}
 
@@ -148,6 +149,17 @@ public class RoleBuilder {
 
 		arrayList.add(RoleBuilder.clientRepresentation(UUID.randomUUID()));
 		// arrayList.add(RoleBuilder.clientRepresentation(UUID.randomUUID()));
+
+		return arrayList;
+	}
+	
+	public static List<RoleVO> roleList() {
+		List<RoleVO> arrayList = new ArrayList<>();
+
+		arrayList.add(RoleBuilder.role().roleVo());
+		arrayList.add(RoleBuilder.role().roleVo());
+		arrayList.add(RoleBuilder.role().roleVo());
+		arrayList.add(RoleBuilder.role().roleVo());
 
 		return arrayList;
 	}

@@ -36,6 +36,12 @@ import reactor.core.publisher.Mono;
 @EnableReactiveMethodSecurity
 public class SecurityConfig implements WebFluxConfigurer {
 	
+	private static String[] publicPostPath = {"/api/v1/users", "/api/v1/signin", 
+											  "/api/v1/password", "/api/v1/username", "/api/v1/totp"};
+	private static String[] publicPutPath = {"/api/v1/password", "/api/v1/email/activation", "/api/v1/totp"};
+	private static String[] publicPatchPath = {"/api/v1/access-token/**"};
+	private static String[] publicGetPath = {"/api/v1/password/token-validation", "/api/v1/email/activation"};
+	
 	/*
 	@Bean
 	public PasswordEncoder passwordEncoder() {
@@ -71,16 +77,20 @@ public class SecurityConfig implements WebFluxConfigurer {
 		            exchanges ->
 		                exchanges
 		                    .pathMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()	
+		                    .pathMatchers(HttpMethod.POST, publicPostPath).permitAll()
+		                    .pathMatchers(HttpMethod.PUT, publicPutPath).permitAll()
+		                    .pathMatchers(HttpMethod.PATCH, publicPatchPath).permitAll()
+		                    .pathMatchers(HttpMethod.GET, publicGetPath).permitAll()
 		                    .pathMatchers("/hello/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 		                    .anyExchange().authenticated()
 		                    .and()
 		    	            .oauth2ResourceServer()
 		    					.jwt()
 		    					.jwtAuthenticationConverter(jwtAuthenticationConverter) 
-	            )//           
+	            );//         
 	            //.httpBasic(withDefaults())
 	            //.formLogin(withDefaults())
-	            .redirectToHttps();
+	            //.redirectToHttps();
 	     // @formatter:on
 	        
 	     return http.build();

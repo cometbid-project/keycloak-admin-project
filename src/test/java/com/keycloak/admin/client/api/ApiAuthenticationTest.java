@@ -14,8 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
@@ -31,7 +29,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -41,23 +38,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.keycloak.admin.client.common.utils.ResponseCreator;
 import com.keycloak.admin.client.components.CustomMessageSourceAccessor;
 import com.keycloak.admin.client.dataacess.AuthBuilder;
-import com.keycloak.admin.client.dataacess.RoleBuilder;
 import com.keycloak.admin.client.dataacess.UserBuilder;
 import com.keycloak.admin.client.models.AuthenticationRequest;
-import com.keycloak.admin.client.models.RoleVO;
 import com.keycloak.admin.client.models.UserVO;
 import com.keycloak.admin.client.oauth.service.KeycloakRestService;
-import com.keycloak.admin.client.oauth.service.it.GroupService;
 import com.keycloak.admin.client.oauth.service.it.KeycloakOauthClientService;
-
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
  * @author Gbenga
  *
  */
-@ExtendWith(SpringExtension.class)
+//@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = ApiAuthenticationTest.TestConfig.class)
 @DisplayName("Access to book api")
 class ApiAuthenticationTest {
@@ -105,7 +97,7 @@ class ApiAuthenticationTest {
 	        EmbeddedMongoAutoConfiguration.class,
 	        MongoReactiveRepositoriesAutoConfiguration.class,
 	        MongoRepositoriesAutoConfiguration.class
-	})
+	})	
 	static class TestConfig {}
 
 	  @DisplayName("as authenticated user is granted")

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.keycloak.admin.client.it;
+package com.keycloak.admin.client.integration;
 
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;

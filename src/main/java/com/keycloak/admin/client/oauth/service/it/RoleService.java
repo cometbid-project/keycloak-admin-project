@@ -3,6 +3,8 @@
  */
 package com.keycloak.admin.client.oauth.service.it;
 
+import javax.validation.constraints.NotBlank;
+
 import com.keycloak.admin.client.models.CreateRoleRequest;
 import com.keycloak.admin.client.models.RoleVO;
 
@@ -34,5 +36,9 @@ public interface RoleService {
 
 	Mono<String> makeRealmRoleCompositeWithClientRole(final String realmRoleName, final CreateRoleRequest clientRole,
 			final String clientId);
+
+	Mono<String> deleteRealmRole(final String realmRoleName); 
+	
+	Mono<String> deleteClientRole(final String clientId, final String clientRoleName); 
 
 }

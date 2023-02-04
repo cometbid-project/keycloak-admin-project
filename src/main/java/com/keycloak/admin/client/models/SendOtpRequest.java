@@ -42,7 +42,7 @@ public class SendOtpRequest {
 	 * @param otpSessionId
 	 * @param mode
 	 */
-	@JsonCreator
+	//@JsonCreator
 	public SendOtpRequest(String otpSessionId, String mode) {
 		super();
 		this.otpSessionId = otpSessionId;
@@ -58,5 +58,14 @@ public class SendOtpRequest {
 		this.otpSessionId = otpSessionId;
 		this.mode = SendModeType.EMAIL.toString();
 	}
+	
+	/**
+	 * @param totpSessionId
+	 * @param mode
+	 */
+	public SendOtpRequest() {
+		this(null);
+	}
+
 
 }

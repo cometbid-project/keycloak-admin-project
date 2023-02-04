@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.keycloak.admin.client.oauth.service;
+package com.keycloak.admin.client.redis.service;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -33,24 +33,16 @@ import reactor.core.publisher.Mono;
 public class ReactiveRedisComponent {
 
 	private final ReactiveRedisOperations<String, Object> redisOperations;
-	private final ReactiveStringRedisTemplate redisListTemplate;
+	//private final ReactiveStringRedisTemplate redisListTemplate;
+	private ReactiveRedisOperations<String, String> redisListTemplate;
 
 	// private ReactiveValueOperations<String, Object> reactiveValueOps;
 	// private ReactiveListOperations<String, String> reactiveListOps;
 
 	public ReactiveRedisComponent(ReactiveRedisOperations<String, Object> redisOperations,
-			ReactiveStringRedisTemplate redisListTemplate) {
+			ReactiveRedisOperations<String, String> redisListTemplate) {
 		this.redisOperations = redisOperations;
 		this.redisListTemplate = redisListTemplate;
-	}
-
-	/**
-	 * 
-	 */
-	@PostConstruct
-	public void init() {
-		// reactiveValueOps = redisOperations.opsForValue();
-		// reactiveListOps = redisListTemplate.opsForList();
 	}
 
 	/**
@@ -173,6 +165,7 @@ public class ReactiveRedisComponent {
 	 * Get an entry by key. First locate the index of the entry, and uses the index
 	 * to locate the entry. Used mostly to confirm the existence of an entry value
 	 * 
+	 * Currently doesn't work as expected. Still under Test
 	 * @param key
 	 * @param list
 	 * @return
@@ -182,7 +175,7 @@ public class ReactiveRedisComponent {
 		Mono<String> result = redisListTemplate.opsForList().indexOf(key, entryValue)
 				.log(String.format("find index of %s by Key(%s)", entryValue, key))
 				.flatMap(index -> redisListTemplate.opsForList().index(key, index))
-				.log(String.format("use index %s to locate Value"));
+				.log();
 
 		return result;
 	}
@@ -213,7 +206,7 @@ public class ReactiveRedisComponent {
 
 		Mono<Long> result = redisListTemplate.opsForList().delete(key)
 				.log(String.format("Key(%s) entries removed", key)).flatMap(index -> this.append(key, list))
-				.log(String.format("Key(%s) re-created, and initialized"));
+				.log(String.format("Key(%s) re-created, and initialized", key));
 
 		return result;
 	}
@@ -373,7 +366,7 @@ public class ReactiveRedisComponent {
 	 */
 	public Mono<Double> incrementThis(@NonNull String key, Double delta) {
 		Mono<Double> lPush = redisOperations.opsForValue().increment(key, delta)
-				.log(String.format("Key(%s) entry Incremented by %1$,.2f", key, delta));
+				.log(String.format("Key(%s) entry Incremented by %.2f", key, delta));
 		return lPush;
 	}
 
@@ -384,7 +377,7 @@ public class ReactiveRedisComponent {
 	 * @param list
 	 * @return
 	 */
-	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull String pojo) {
+	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull Object pojo) {
 
 		Mono<Boolean> lPush = redisOperations.opsForValue().setIfAbsent(key, pojo)
 				.log(String.format("Key(%s) entry Pushed", key));
@@ -494,6 +487,18 @@ public class ReactiveRedisComponent {
 	public Mono<Boolean> deletePojo(@NonNull String key) {
 
 		Mono<Boolean> lPop = redisOperations.opsForValue().delete(key).log(String.format("Key(%s) entry Deleted", key));
+		return lPop;
+	}
+	
+	/**
+	 * Removes the given key entry
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public Mono<Object> GetAndDeletePojo(@NonNull String key) {
+
+		Mono<Object> lPop = redisOperations.opsForValue().getAndDelete(key).log(String.format("Key(%s) entry Deleted", key)); 
 		return lPop;
 	}
 

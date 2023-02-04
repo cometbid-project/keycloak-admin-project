@@ -174,8 +174,7 @@ class GroupServiceAuthorizationTest {
 		when(groupResource.toRepresentation()).thenReturn(newGroupRepresentation);
 
 		StepVerifier.create(groupService.findRealmGroupById(groupId.toString()))
-				.verifyError(AccessDeniedException.class);
-		
+				.verifyError(AccessDeniedException.class);		
 	}
 
 	/**
@@ -192,8 +191,7 @@ class GroupServiceAuthorizationTest {
 		when(groupResource.toRepresentation()).thenReturn(newGroupRepresentation);
 
 		StepVerifier.create(groupService.findRealmGroupById(groupId.toString()))
-				.verifyError(AccessDeniedException.class);
-		
+				.verifyError(AccessDeniedException.class);		
 	}
 
 	/**

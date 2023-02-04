@@ -8,19 +8,16 @@ import java.util.Map;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collections;
 import java.util.HashMap;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 
 /**
@@ -29,9 +26,8 @@ import lombok.Value;
  */
 @Value
 @Builder
-//@AllArgsConstructor
-//@NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
+@XmlRootElement
+@JsonInclude(Include.ALWAYS)
 @Schema(name = "Role", description = "Role respresentation")
 public class RoleVO {
 
@@ -58,7 +54,6 @@ public class RoleVO {
 	 * @param description
 	 * @param attributes
 	 */
-	@JsonCreator
 	public RoleVO(String id, String name, String description, Map<String, List<String>> attributes) {
 		super();
 		this.id = id;

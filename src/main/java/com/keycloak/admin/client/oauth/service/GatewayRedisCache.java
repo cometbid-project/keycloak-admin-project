@@ -15,6 +15,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.TotpRequest;
+import com.keycloak.admin.client.redis.service.ReactiveRedisComponent;
 
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;
@@ -41,9 +42,11 @@ public class GatewayRedisCache {
 	public GatewayRedisCache(@Qualifier("redis") ReactiveRedisComponent cacheUtil, Environment environment) {
 		this.cacheUtil = cacheUtil;
 		this.environment = environment;
+		
+		init();
 	}
 
-	@PostConstruct
+	//@PostConstruct
 	public void init() {
 
 		cacheUtil.append(BLOCKED_IPADDRESSES, getDefaultIPList());
@@ -122,7 +125,7 @@ public class GatewayRedisCache {
 	 */
 	public Mono<Long> incrementFailedLogin(String cacheKey) {
 
-		return cacheUtil.putIfAbsent(cacheKey, "0").then(cacheUtil.incrementThis(cacheKey));
+		return cacheUtil.putIfAbsent(cacheKey, Integer.valueOf(0)).then(cacheUtil.incrementThis(cacheKey));
 	}
 
 	/**

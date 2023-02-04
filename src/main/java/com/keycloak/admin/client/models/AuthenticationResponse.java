@@ -5,10 +5,13 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -19,6 +22,7 @@ import lombok.experimental.Accessors;
  */
 @Value
 //@Builder
+@JsonInclude(Include.ALWAYS)
 @Accessors(chain = true)
 @Schema(name = "Login response", description = "Authentication response which includes the JWT access token")
 public class AuthenticationResponse implements Serializable {
@@ -31,7 +35,7 @@ public class AuthenticationResponse implements Serializable {
 	@JsonProperty("username")
 	@Schema(name = "Username(Email)", description = "Username of the authenticated user")
 	private String username;
-
+	
 	@JsonProperty("roles")
 	@Schema(name = "Roles", description = "Role(s) of the authenticated user")
 	private List<String> roles;
@@ -77,7 +81,7 @@ public class AuthenticationResponse implements Serializable {
 	}
 
 	@Builder
-	@JsonCreator
+	//@JsonCreator
 	public AuthenticationResponse(String username, List<String> roles, String accessToken, String refreshToken,
 			Long expiresIn, Long refreshExpiresIn, String secret, String otpCode) {
 

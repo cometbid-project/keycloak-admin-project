@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.util.ObjectUtils;
 
+import com.keycloak.admin.client.config.AuthProperties;
+
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -33,14 +35,15 @@ public class KeycloakGrantedAuthoritiesConverter implements Converter<Jwt, Colle
 	private static final String RESOURCE_ACCESS = "resource_access";
 
 	private final Converter<Jwt, Collection<GrantedAuthority>> defaultAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
-	private final String clientId;
+	private final AuthProperties keycloakProperties;
 
 	/**
 	 * 
 	 */
 	@Override
 	public Collection<GrantedAuthority> convert(Jwt jwt) {
+		String clientId = keycloakProperties.getAdminClientId();
+		
 		var realmRoles = realmRoles(jwt);
 		var clientRoles = clientRoles(jwt, clientId);
 

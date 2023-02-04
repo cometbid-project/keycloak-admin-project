@@ -43,6 +43,7 @@ public class GroupBuilder {
 	private GroupBuilder() {
 		faker = new Faker();
 
+		this.id = UUID.randomUUID();
 		this.name = faker.team().name().toUpperCase();
 		this.description = faker.lorem().sentence(1);
 		this.path = faker.internet().url();
@@ -116,6 +117,17 @@ public class GroupBuilder {
 
 		arrayList.add(GroupBuilder.groupRepresentation(UUID.randomUUID()));
 		arrayList.add(GroupBuilder.groupRepresentation(UUID.randomUUID()));
+
+		return arrayList;
+	}
+	
+	public static List<GroupVO> groupList() {
+		List<GroupVO> arrayList = new ArrayList<>();
+
+		arrayList.add(GroupBuilder.group().build());
+		arrayList.add(GroupBuilder.group().build());
+		arrayList.add(GroupBuilder.group().build());
+		arrayList.add(GroupBuilder.group().build());
 
 		return arrayList;
 	}

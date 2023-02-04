@@ -7,11 +7,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -22,6 +22,7 @@ import lombok.ToString;
 @ToString
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class AppResponse {
 
 	@JsonProperty("metadata")
@@ -29,6 +30,11 @@ public class AppResponse {
 
 	@JsonProperty("response")
 	private final ApiResponse apiResponse;
+	
+	public AppResponse() {
+		this.metadata = new AppResponseMetadata();
+		this.apiResponse = null;		
+	}
 
 	public AppResponse(final String apiVersion, String httpMethod, String errorCode, final int code,
 			final String message, final String domain, final String reason, final String traceId,
@@ -37,7 +43,7 @@ public class AppResponse {
 		String status = HttpStatus.valueOf(code).name();
 
 		this.metadata = AppResponseMetadata.builder().apiVersion(apiVersion).status(status)
-				.moreInfo(moreInfoUrl + status).sendReport(errorReportUri + "?id=" + traceId).shortMessage(message)
+				.moreInfo(moreInfoUrl).sendReport(errorReportUri + "?id=" + traceId).shortMessage(message)
 				.build();
 
 		this.apiResponse = new ApiError(domain, httpMethod, errorCode, reason, code, message, null);
@@ -68,7 +74,7 @@ public class AppResponse {
 		super();
 		this.apiResponse = new ApiError(path, httpMethod, errorCode, httpStatus, message, ex.getMessage());
 		this.metadata = AppResponseMetadata.builder().apiVersion(currentApiVersion).status(httpStatus.name())
-				.moreInfo(moreInfoUrl + httpStatus.name()).sendReport(sendReportUri + "?id=" + traceId)
+				.moreInfo(moreInfoUrl).sendReport(sendReportUri + "?id=" + traceId)
 				.shortMessage(message).build();
 	}
 
@@ -82,7 +88,7 @@ public class AppResponse {
 		super();
 		this.apiResponse = apiError;
 		this.metadata = AppResponseMetadata.builder().apiVersion(apiVersion).status(status)
-				.moreInfo(moreInfoUrl + status).sendReport(sendReportUri + "?id=" + apiError.getTraceId())
+				.moreInfo(moreInfoUrl).sendReport(sendReportUri + "?id=" + apiError.getTraceId())
 				.shortMessage(message).build();
 	}
 
@@ -95,7 +101,7 @@ public class AppResponse {
 		super();
 		this.apiResponse = apiMessage;
 		this.metadata = AppResponseMetadata.builder().apiVersion(apiVersion).status(status)
-				.moreInfo(moreInfoUrl + status).shortMessage(message).build();
+				.moreInfo(moreInfoUrl).shortMessage(message).build();
 	}
 
 	public ApiResponse getApiResponse() {

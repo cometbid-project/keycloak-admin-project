@@ -229,6 +229,13 @@ public interface KeycloakOauthClientService {
 
 	/**
 	 * 
+	 * @param userId
+	 * @return
+	 */
+	Mono<String> deleteAppUser(String userId);  
+
+	/**
+	 * 
 	 * @param otpCode
 	 * @param totpCode
 	 * @param username

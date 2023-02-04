@@ -10,16 +10,16 @@ import java.util.Map;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 
 /**
@@ -29,8 +29,9 @@ import lombok.Value;
 @Value
 @Schema(name = "Group", description = "Group representation")
 @Builder
-//@AllArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
+@XmlRootElement
+@JsonInclude(Include.ALWAYS)
+//@JsonIgnoreProperties(ignoreUnknown = false)
 public class GroupVO {
 
 	private String id;
@@ -68,7 +69,8 @@ public class GroupVO {
 	 * @param clientRoles
 	 */
 	@JsonCreator
-	public GroupVO(String id, String name, String path, Map<String, List<String>> attributes, List<String> realmRoles,
+	public GroupVO(String id, String name, String path, 
+			Map<String, List<String>> attributes, List<String> realmRoles,
 			Map<String, List<String>> clientRoles) {
 		super();
 		this.id = id;

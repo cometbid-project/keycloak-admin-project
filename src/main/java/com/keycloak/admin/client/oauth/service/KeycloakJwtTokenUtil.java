@@ -186,7 +186,7 @@ public class KeycloakJwtTokenUtil {
 	 * @return
 	 */
 	public static AuthenticationResponse generateLoginResponse(@NotBlank final String data,
-			@NotEmpty final List<String> roles, @NotBlank final String username) {
+			final List<String> roles, @NotBlank final String username) {
 		log.info("Access Code response Data {}", data);
 
 		String accessToken = JsonPath.read(data, "$.access_token");
@@ -200,9 +200,8 @@ public class KeycloakJwtTokenUtil {
 		log.info("Expires in: " + expiresIn);
 		log.info("Refresh Expires in: " + refreshExpiresIn);
 
-		String refreshTokenPath = UriComponentsBuilder.fromPath("/auth/refresh").build().toUriString();
-
-		log.info("Refresh Token Path: {}", refreshTokenPath);
+		//String refreshTokenPath = UriComponentsBuilder.fromPath("/auth/refresh").build().toUriString();
+		//log.info("Refresh Token Path: {}", refreshTokenPath);
 
 		AuthenticationResponse authenticationResponse = AuthenticationResponse.builder().username(username).roles(roles)
 				.accessToken(accessToken).refreshToken(refreshToken).expiresIn(expiresIn)

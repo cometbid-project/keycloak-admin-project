@@ -257,6 +257,6 @@ class ApiDocumentationTest {
 	    verify(bookService).create(bookArg.capture());
 
 	    assertThat(bookArg.getValue().block()).isNotNull().isEqualTo(expectedBook);
-	  }
+	 }
 	  
 }

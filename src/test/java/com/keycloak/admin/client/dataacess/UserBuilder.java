@@ -209,7 +209,7 @@ public class UserBuilder {
 
 	public StatusUpdateRequest buildStatusUpdate() {
 
-		return StatusUpdateRequest.builder().username(this.username).status(this.status).build();
+		return StatusUpdateRequest.builder().status(this.status).build();
 	}
 
 	public EmailStatusUpdateRequest buildEmailUpdate() {
@@ -224,7 +224,8 @@ public class UserBuilder {
 
 	public SearchUserRequest buildSearchUserRequest() {
 
-		return SearchUserRequest.builder().firstName(this.firstName).lastName(this.lastName).email(this.email)
+		return SearchUserRequest.builder().firstName(this.firstName)
+				.lastName(this.lastName).email(this.email)
 				.emailVerified(faker.bool().bool()).build();
 	}
 
@@ -252,7 +253,7 @@ public class UserBuilder {
 
 	public ProfileActivationUpdateRequest buildProfileActivationRequest() {
 
-		return ProfileActivationUpdateRequest.builder().username(this.username).enable(faker.bool().bool()).build();
+		return ProfileActivationUpdateRequest.builder().userId(this.id).enable(faker.bool().bool()).build();
 	}
 
 	public AuthenticationRequest loginRequest() {
@@ -300,6 +301,17 @@ public class UserBuilder {
 		}
 
 		return userList;
+	}
+	
+	public static List<UserVO> userList() {
+		List<UserVO> arrayList = new ArrayList<>();
+
+		arrayList.add(UserBuilder.user().userVo(UUID.randomUUID()));
+		arrayList.add(UserBuilder.user().userVo(UUID.randomUUID()));
+		arrayList.add(UserBuilder.user().userVo(UUID.randomUUID()));
+		arrayList.add(UserBuilder.user().userVo(UUID.randomUUID()));
+
+		return arrayList;
 	}
 
 	public static StatusType getRandomStatus() {

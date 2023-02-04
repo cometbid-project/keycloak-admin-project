@@ -5,9 +5,13 @@ package com.keycloak.admin.client.models;
 
 import javax.validation.constraints.Size;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -23,7 +27,12 @@ import lombok.Value;
 //@NoArgsConstructor
 @Schema(name = "Search Criteria", description = "Search user profiles criteria model")
 public class SearchUserRequest {
-
+	
+	@Schema(name = "username", description = "username (email)", required = true, example = "john_doe@yahoo.com")
+	@JsonProperty("username")
+	@Size(max = 50, message = "{User.username.size}")
+	protected String username;
+	
 	@Schema(name = "first name", description = "first name on profiles", required = true, example = "John")
 	@JsonProperty("first_name")
 	@Size(max = 50, message = "{FirstName.size}")
@@ -49,8 +58,9 @@ public class SearchUserRequest {
 	 * @param email
 	 */
 	@JsonCreator
-	public SearchUserRequest(String firstName, String lastName, String email, boolean emailVerified) {
+	public SearchUserRequest(String username, String firstName, String lastName, String email, boolean emailVerified) {
 		super();
+		this.username = username;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
@@ -61,7 +71,7 @@ public class SearchUserRequest {
 	 * 
 	 */
 	private SearchUserRequest() {
-		this(null, null, null, false);
+		this(null, null, null, null, false);
 	}
 
 }

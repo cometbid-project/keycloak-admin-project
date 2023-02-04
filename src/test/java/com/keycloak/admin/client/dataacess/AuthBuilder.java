@@ -67,7 +67,7 @@ public class AuthBuilder {
 		this.refreshToken = JwtUtil.instance().generateToken(user);
 
 		this.username = user.getUsername();
-		this.roles = List.copyOf(user.getRoles());
+		this.roles = user.getRoles();
 	}
 
 	public static AuthBuilder auth(UserVO user) {

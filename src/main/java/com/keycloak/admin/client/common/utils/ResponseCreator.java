@@ -23,6 +23,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.keycloak.admin.client.common.enums.ResponseType;
@@ -79,7 +80,7 @@ public class ResponseCreator {
 	public <T> Mono<ServerResponse> defaultReadResponse(Mono<T> profiles, Class<? extends T> type,
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
-		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.FOUND).headers(headers -> {
+		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.OK).headers(headers -> {
 			if (!MapUtils.isEmpty(headerFields)) {
 				headers.putAll(headerFields);
 			}
@@ -226,6 +227,17 @@ public class ResponseCreator {
 
 		return new AppResponse(apiVersion, "", apiMessage, HttpStatus.OK.toString(), apiInfoUrl);
 	}
+	
+	public AppResponse createAppResponse(String message, ServerWebExchange exchange) {
+
+		ApiMessage apiMessage = ApiMessage.builder().httpStatus(HttpStatus.OK).message(message).path(path(exchange))
+				.timestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.UTC).toString())
+				.debugMessage(getMessage("success.detail.message")).responseTyp(ResponseType.SUCCESS).build();
+
+		apiMessage.add(path(exchange), ResponseType.SUCCESS.toString(), getMessage("success.message"));
+
+		return new AppResponse(apiVersion, "", apiMessage, HttpStatus.OK.toString(), apiInfoUrl);
+	}
 
 // =================================================================================================================
 
@@ -286,6 +298,10 @@ public class ResponseCreator {
 
 	private static String path(ServerRequest r) {
 		return r.exchange().getRequest().getPath().pathWithinApplication().value();
+	}
+	
+	private static String path(ServerWebExchange exchange) {
+		return exchange.getRequest().getPath().pathWithinApplication().value();
 	}
 
 	private static URI uri(ServerRequest r, String pathSegments, Object... uriVariables) {

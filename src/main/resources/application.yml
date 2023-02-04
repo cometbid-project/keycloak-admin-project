@@ -6,7 +6,7 @@ spring:
     serialization:
       indent-output: true
   profiles:
-    active: dev,prod
+    active: dev #,prod
   redis:
     host: localhost
     port: 6379
@@ -22,7 +22,7 @@ spring:
       enabled: true
   security:
     oauth2:
-      resourceserver.jwt.issuer-uri: "http://localhost:8081/auth/realms/demo"
+      resourceserver.jwt.issuer-uri: "http://localhost:8890/realms/my-demo"
       #client:
         #registration:
          # keycloak:
@@ -89,7 +89,7 @@ api:
     server.error.description: Server Failure
     notFound.description: Not found, the specified id does not exist
     conflict.description: Resource conflict, similar resource already exist
-    server.unavalable.description: Service Unavailable
+    server.unavailable.description: Service Unavailable
     unprocessableEntity.description: Unprocessable entity, input parameters caused the processing to fail. See response message for more information
 
   product-composite:

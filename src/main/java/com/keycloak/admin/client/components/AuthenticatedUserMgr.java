@@ -78,9 +78,10 @@ public class AuthenticatedUserMgr {
 	 * @return
 	 */
 	public Mono<String> getLoggedInUser(ServerWebExchange webExchange) {
-		return webExchange.getPrincipal()
-				.switchIfEmpty(ErrorPublisher.raiseUnauthenticatedUserError("unauthenticated.user", new Object[] {}))
-				.map(p -> p.getName());
+		log.info("Server WebExchange {}", webExchange);
+
+		return webExchange.getPrincipal().map(p -> p.getName()).log()
+				.switchIfEmpty(ErrorPublisher.raiseUnauthenticatedUserError("unauthenticated.user", new Object[] {}));
 	}
 
 	/**

@@ -5,6 +5,7 @@ package com.keycloak.admin.client.handlers;
 
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -82,7 +83,6 @@ public class PasswordManagementHandler {
 	 */
 	@Loggable
 	public Mono<ServerResponse> resetPassword(ServerRequest r) {
-
 		final Mono<ResetPasswordFinalRequest> monoResetPasswdRequest = r.bodyToMono(ResetPasswordFinalRequest.class);
 
 		return monoResetPasswdRequest.flatMap(
@@ -94,6 +94,7 @@ public class PasswordManagementHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> changePassword(ServerRequest r) {
 		log.info("Change Password process...");

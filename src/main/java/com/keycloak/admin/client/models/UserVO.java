@@ -4,8 +4,10 @@
 package com.keycloak.admin.client.models;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,7 +30,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -55,7 +59,8 @@ import lombok.Value;
 @XmlRootElement(name = "user")
 @XmlType(name = "user")
 @XmlAccessorType(XmlAccessType.FIELD)
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.ALWAYS)
+//@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserVO implements UserDetails {
 
 	/**
@@ -89,7 +94,7 @@ public class UserVO implements UserDetails {
 	private String lastName;
 
 	@Schema(name = "displayName", description = "user's display name", required = true, example = "Martins Origi")
-	//@Size(max = 101, message = "{User.displayName.size}")
+	// @Size(max = 101, message = "{User.displayName.size}")
 	@JsonProperty("display_name")
 	protected String displayName;
 
@@ -143,6 +148,11 @@ public class UserVO implements UserDetails {
 
 	public String getDisplayName() {
 		return displayName(this.firstName, this.lastName);
+	}
+	
+	@JsonProperty("roles")
+	public List<String> getRoles() {
+		return new ArrayList<>(roles);
 	}
 
 	@Override
@@ -206,15 +216,10 @@ public class UserVO implements UserDetails {
 	 * @param emailVerified
 	 */
 	@JsonCreator
-	public UserVO(String id, @Size(max = 330, message = "{User.username.size}") String username,
-			@ValidEmail(message = "{User.email.invalid}") @Size(max = 330, message = "{User.email.size}") String email,
-			@NotBlank(message = "{FirstName.notBlank}") @Size(min = 1, max = 200, message = "{FirstName.size}") String firstName,
-			@NotBlank(message = "{LastName.notBlank}") @Size(min = 1, max = 200, message = "{LastName.size}") String lastName,
-			@Size(max = 40, message = "{User.displayName.size}") String displayName, LocalDateTime createdDate,
-			LocalDateTime lastModifiedDate, String providerUserId, String socialProvider, boolean enableMFA,
-			String password,
-			@NotEmpty @Size(min = 1, max = 1, message = "{User.roles.size}") Set<@NotBlank String> roles,
-			boolean accountLocked, boolean disabled, boolean expired, boolean emailVerified) {
+	public UserVO(String id, String username, String email, String firstName, String lastName, String displayName,
+			LocalDateTime createdDate, LocalDateTime lastModifiedDate, String providerUserId, String socialProvider,
+			boolean enableMFA, String password, Set<@NotBlank String> roles, boolean accountLocked, boolean disabled,
+			boolean expired, boolean emailVerified) {
 		super();
 		this.id = id;
 		this.username = username;

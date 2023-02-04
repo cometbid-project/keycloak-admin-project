@@ -46,7 +46,7 @@ import reactor.core.publisher.Mono;
 @Log4j2
 @Service
 @Validated
-@PreAuthorize("hasAnyRole('ADMIN')")
+@PreAuthorize("hasRole('ROLE_ADMIN')")
 public class GroupServiceImpl implements GroupService {
 
 	private final Keycloak keycloak;
@@ -176,4 +176,20 @@ public class GroupServiceImpl implements GroupService {
 
 		return CreatedResponseUtil.getCreatedId(response);
 	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public Mono<String> deleteRealmGroup(@NotBlank final String id) {
+
+		return Mono.fromRunnable(() -> this.realmResource().removeDefaultGroup(id))
+				.then(Mono.just(i8nMessageAccessor.getLocalizedMessage("group.deleteById.success")))
+				.doOnError(ex -> log.error("Error occured while finding corresponding Realm group by id", ex))
+				.onErrorResume(ERROR_Predicate,
+						(ex) -> raiseRuntimeError(
+								i8nMessageAccessor.getLocalizedMessage("group.deleteById.error", new Object[] { id }),
+								ex));
+	}
+
 }

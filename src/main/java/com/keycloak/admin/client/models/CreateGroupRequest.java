@@ -20,7 +20,6 @@ import lombok.experimental.Accessors;
  * @author Gbenga
  *
  */
-@Builder
 @Value
 @Schema(name = "Create Group", description = "Create Group request model")
 @Accessors(chain = true)
@@ -45,11 +44,9 @@ public class CreateGroupRequest implements Serializable {
 	 * @param groupName
 	 * @param description
 	 */
+	@Builder
 	@JsonCreator
-	public CreateGroupRequest(
-			@Size(min = 1, max = 30, message = "{group.name.size}") @NotBlank(message = "{group.name.notBlank}") String groupName,
-			@Size(max = 70, message = "{group.desc.size}") String description) {
-		super();
+	public CreateGroupRequest(String groupName, String description) {
 		this.groupName = groupName;
 		this.description = description;
 	}
@@ -57,8 +54,7 @@ public class CreateGroupRequest implements Serializable {
 	/**
 	 * 
 	 */
-	public CreateGroupRequest(
-			@Size(min = 1, max = 30, message = "{group.name.size}") @NotBlank(message = "{group.name.notBlank}") String groupName) {
+	public CreateGroupRequest(String groupName) {
 		this(groupName, null);
 	}
 

@@ -10,23 +10,17 @@ import com.keycloak.admin.client.components.AuthenticatedUserMgr;
 import com.keycloak.admin.client.models.AuthenticationRequest;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.models.EmailStatusUpdateRequest;
-import com.keycloak.admin.client.models.LogoutRequest;
 import com.keycloak.admin.client.models.StatusUpdateRequest;
 import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
 import com.keycloak.admin.client.models.UserVO;
 import com.keycloak.admin.client.oauth.service.it.UserAuthenticationService;
 import com.keycloak.admin.client.oauth.service.it.UserCredentialFinderService;
-import com.keycloak.admin.client.response.model.AppResponse;
 import com.keycloak.admin.client.validators.GlobalProgrammaticValidator;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import lombok.extern.log4j.Log4j2;
@@ -54,6 +48,11 @@ public class UserAuthenticationHandler {
 		this.responseCreator = responseCreator;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
+	@Loggable
 	public Mono<ServerResponse> signin(ServerRequest r) {
 		log.info("auth login...");
 
@@ -62,7 +61,7 @@ public class UserAuthenticationHandler {
 		return monoSigninRequest.flatMap(GlobalProgrammaticValidator::validate)
 				.flatMap(request -> this.responseCreator.defaultReadResponse(
 						userAuthenticationService.authenticate(request, r.exchange().getRequest()),
-						AuthenticationResponse.class, null, r))
+						AuthenticationResponse.class, null, r)).log()
 				.timeout(Duration.ofSeconds(3));
 	}
 
@@ -70,6 +69,7 @@ public class UserAuthenticationHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> findMyProfile(ServerRequest r) {
 
@@ -81,6 +81,7 @@ public class UserAuthenticationHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> updateMyProfile(ServerRequest r) {
 
@@ -99,6 +100,7 @@ public class UserAuthenticationHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> findUserProfile(ServerRequest r) {
 
@@ -112,6 +114,7 @@ public class UserAuthenticationHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> updateUserProfile(ServerRequest r) {
 
@@ -130,6 +133,7 @@ public class UserAuthenticationHandler {
 	 * @param r
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> updateMyStatus(ServerRequest r) {
 
@@ -148,6 +152,7 @@ public class UserAuthenticationHandler {
 	 * 
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> updateUserStatus(ServerRequest r) {
 
@@ -165,6 +170,7 @@ public class UserAuthenticationHandler {
 	 * 
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> updateUserEmailStatus(ServerRequest r) {
 
@@ -182,6 +188,7 @@ public class UserAuthenticationHandler {
 	 * 
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> enableUserProfile(ServerRequest r) {
 
@@ -197,6 +204,7 @@ public class UserAuthenticationHandler {
 	 * @param r
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> disableUserProfile(ServerRequest r) {
 
@@ -212,13 +220,17 @@ public class UserAuthenticationHandler {
 	 * @param r
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> logMeOut(ServerRequest r) {
-		final Mono<LogoutRequest> monoLogoutRequest = r.bodyToMono(LogoutRequest.class);
+		final String refreshToken = r.headers().firstHeader("refresh-token");
+		if (StringUtils.isBlank(refreshToken)) {
+			return this.responseCreator.createErrorMessageResponse("Missing refresh token in the header",
+					HttpStatus.BAD_REQUEST, null, null, r);
+		}
 
-		return monoLogoutRequest.flatMap(GlobalProgrammaticValidator::validate)
-				.flatMap(logoutRequest -> authUserMgr.getLoggedInUser(r.exchange()).flatMap(
-						username -> this.userAuthenticationService.signout(username, logoutRequest.getRefreshToken())))
+		return authUserMgr.getLoggedInUser(r.exchange())
+				.flatMap(username -> this.userAuthenticationService.signout(username, refreshToken))
 				.flatMap(msg -> this.responseCreator.createSuccessMessageResponse(msg, null, null, r))
 				.timeout(Duration.ofSeconds(3));
 	}
@@ -230,15 +242,18 @@ public class UserAuthenticationHandler {
 	 * @param request
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
+	@Loggable
 	public Mono<ServerResponse> logout(ServerRequest r) {
-		log.info("auth logout...");
-
 		String userId = r.pathVariable("id");
-		final Mono<LogoutRequest> monoLogoutRequest = r.bodyToMono(LogoutRequest.class);
 
-		return monoLogoutRequest.flatMap(GlobalProgrammaticValidator::validate)
-				.flatMap(
-						logoutRequest -> this.userAuthenticationService.logout(userId, logoutRequest.getRefreshToken()))
+		final String refreshToken = r.headers().firstHeader("refresh-token");
+		if (StringUtils.isBlank(refreshToken)) {
+			return this.responseCreator.createErrorMessageResponse("Missing refresh token in the header",
+					HttpStatus.BAD_REQUEST, null, null, r);
+		}
+
+		return this.userAuthenticationService.logout(userId, refreshToken)
 				.flatMap(msg -> this.responseCreator.createSuccessMessageResponse(msg, null, null, r))
 				.timeout(Duration.ofSeconds(3));
 	}
@@ -248,20 +263,22 @@ public class UserAuthenticationHandler {
 	 * @param refreshToken
 	 * @return
 	 */
-	//@DeleteMapping(value = "/v2/token")
+	@PreAuthorize("isAuthenticated()")
+	@Loggable
 	public Mono<ServerResponse> revokeToken(ServerRequest r) {
 
 		// Extract the Refresh token
-		final Mono<LogoutRequest> monoRefreshTokenRequest = r.bodyToMono(LogoutRequest.class);
+		final String refreshToken = r.headers().firstHeader("refresh-token");
+		if (StringUtils.isBlank(refreshToken)) {
+			return this.responseCreator.createErrorMessageResponse("Missing refresh token in the header",
+					HttpStatus.BAD_REQUEST, null, null, r);
+		}
 
-		return monoRefreshTokenRequest.flatMap(request -> {
-			log.info("Authentication token: {}", request);
-
-			return authUserMgr.getLoggedInUser(r.exchange())
-					.flatMap(username -> this.responseCreator.defaultReadResponse(
-							this.userAuthenticationService.revokeToken(request.getRefreshToken()), String.class, null,
-							r));
-		});
+		return authUserMgr.getLoggedInUser(r.exchange())
+				.flatMap(username -> this.userAuthenticationService.revokeToken(refreshToken))
+				// .defaultReadResponse(this.userAuthenticationService.revokeToken(refreshToken),
+				// String.class, null, r))
+				.flatMap(msg -> this.responseCreator.createSuccessMessageResponse(msg, null, null, r));
 	}
 
 	/**
@@ -272,20 +289,19 @@ public class UserAuthenticationHandler {
 	 * 
 	 * @return
 	 */
+	@Loggable
 	public Mono<ServerResponse> refreshToken(ServerRequest r) {
-		log.info("auth refreshToken...");
-
 		// Extract the Refresh token
-		final Mono<LogoutRequest> monoRefreshTokenRequest = r.bodyToMono(LogoutRequest.class);
+		final String refreshToken = r.headers().firstHeader("refresh-token");
+		if (StringUtils.isBlank(refreshToken)) {
+			return this.responseCreator.createErrorMessageResponse("Missing refresh token in the header",
+					HttpStatus.BAD_REQUEST, null, null, r);
+		}
 
-		return monoRefreshTokenRequest.flatMap(request -> {
-			log.info("Authentication token: {}", request);
+		String username = r.pathVariable("username");
 
-			return authUserMgr.getLoggedInUser(r.exchange())
-					.flatMap(username -> this.responseCreator.defaultReadResponse(
-							userAuthenticationService.refreshToken(username, request.getRefreshToken()),
-							AuthenticationResponse.class, null, r));
-		});
+		return this.responseCreator.defaultReadResponse(userAuthenticationService.refreshToken(username, refreshToken),
+				AuthenticationResponse.class, null, r);
 	}
 
 }

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -44,6 +45,12 @@ public class RegistrationHandler {
 		this.responseCreator = responseCreator;
 	}
 
+	/**
+	 * 
+	 * @param serverRequest
+	 * @return
+	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> hello(ServerRequest serverRequest) {
 
@@ -56,6 +63,7 @@ public class RegistrationHandler {
 	 *
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> signupAdmin(ServerRequest r) {
 

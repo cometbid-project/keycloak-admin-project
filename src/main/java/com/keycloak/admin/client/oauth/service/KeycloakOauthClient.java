@@ -216,7 +216,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		boolean userEnabled = true;
 		boolean briefRepresentation = true;
 
-		String username = searchFields.getEmail();
+		String username = searchFields.getUsername();
 		String firstName = searchFields.getFirstName();
 		String lastName = searchFields.getLastName();
 		String email = searchFields.getEmail();
@@ -966,7 +966,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	@Override
 	public Mono<UserVO> updateOauthUserById(@Valid final UserDetailsUpdateRequest userDetails,
 			@NotBlank final String userId) {
-		// TODO Auto-generated method stub
+
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(userId))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { userId }));
 
@@ -982,7 +982,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	@Override
 	public Mono<UserVO> updateOauthUser(@Valid final UserDetailsUpdateRequest userDetails,
 			@NotBlank final String username) {
-		// TODO Auto-generated method stub
+
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResource(username))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
 
@@ -1012,7 +1012,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public Mono<String> enableOauthUser(@Valid final ProfileActivationUpdateRequest profileStatus) {
-		// TODO Auto-generated method stub  
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(profileStatus.getUserId()));
 
 		return userRep.flatMap(userResource -> doUserProfileUpdate(userResource, profileStatus));
@@ -1036,7 +1035,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	public Mono<String> expireUserPassword(final UserRepresentation userRepresentation) {
-		// TODO Auto-generated method stub
+
 		String username = userRepresentation.getUsername();
 		// Set as True so that User is forced to change their password
 		userRepresentation.singleAttribute(PROFILE_EXPIRED, Boolean.TRUE.toString());
@@ -1053,6 +1052,15 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 				.thenReturn(i8nMessageAccessor.getLocalizedMessage("auth.message.success"));
 		// .onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("expire.password.error")));
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public Mono<String> deleteAppUser(String userId) {
+		
+		return enableOauthUser(new ProfileActivationUpdateRequest(userId, false));
 	}
 
 }

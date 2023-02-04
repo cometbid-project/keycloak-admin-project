@@ -314,4 +314,19 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("clientRole.assign.error")));
 	}
 
+	/**
+	 * 
+	 */
+	@Override
+	@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+	public Mono<String> deleteUser(@NotBlank final String userId) {
+
+		return keycloakClient.deleteAppUser(userId)
+				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
+						new GenericSpringEvent<>(ActivityEventTypes.DELETE_USER_EVENT, StringUtils.EMPTY,
+								"User deletion was successful", ObjectType.USER_AUTH, ContentType.AUTH)))
+				.doOnError(ex -> log.error("Error occured while deleting User profile", ex))
+				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("user.delete.error")));
+	}
+
 }

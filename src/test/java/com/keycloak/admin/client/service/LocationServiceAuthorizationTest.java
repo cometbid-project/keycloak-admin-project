@@ -94,7 +94,9 @@ import ua_parser.Parser;
 @Log4j2
 @WebFluxTest
 @DisplayName("Verify User service")
-@ContextConfiguration(classes = { AuthProfile.class, AppConfiguration.class, SecurityConfig.class, MessageConfig.class,
+@ContextConfiguration(classes = { 
+		AuthProfile.class, AppConfiguration.class, 
+		SecurityConfig.class, MessageConfig.class,
 		SchedulerConfig.class, LoginNotificationConfig.class })
 @Import({ KeycloakOauthClient.class, UserLocationServiceImpl.class, UserMapper.class, LocaleContextUtils.class,
 		CustomMessageSourceAccessor.class, ApplicationEventPublisher.class, CommonUtil.class })
@@ -168,7 +170,7 @@ class LocationServiceAuthorizationTest {
 		when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.just(usrLoginLoc));
 		// when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.empty());
 		when(successLoginRepository.save(any(UserloginLocation.class))).thenReturn(Mono.just(usrLoginLoc));
-		when(keycloakClient.updateUserStatus(any(StatusUpdateRequest.class)))
+		when(keycloakClient.updateUserStatus(username, any(StatusUpdateRequest.class)))
 				.thenReturn(Mono.just(AuthProperties.SUCCESS));
 
 		NewLocationToken newestToken = loginBuilder.newLoginLocToken();
@@ -403,7 +405,7 @@ class LocationServiceAuthorizationTest {
 
 		when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.empty());
 		when(successLoginRepository.save(any(UserloginLocation.class))).thenReturn(Mono.just(usrLoginLoc));
-		when(keycloakClient.updateUserStatus(any(StatusUpdateRequest.class)))
+		when(keycloakClient.updateUserStatus(username, any(StatusUpdateRequest.class)))
 				.thenReturn(Mono.just(AuthProperties.SUCCESS));
 
 		NewLocationToken newestToken = loginBuilder.newLoginLocToken();
@@ -459,7 +461,7 @@ class LocationServiceAuthorizationTest {
 
 		when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.empty());
 		when(successLoginRepository.save(any(UserloginLocation.class))).thenReturn(Mono.just(usrLoginLoc));
-		when(keycloakClient.updateUserStatus(any(StatusUpdateRequest.class)))
+		when(keycloakClient.updateUserStatus(username, any(StatusUpdateRequest.class)))
 				.thenReturn(Mono.just(AuthProperties.SUCCESS));
 
 		NewLocationToken newestToken = loginBuilder.newLoginLocToken();
@@ -561,7 +563,7 @@ class LocationServiceAuthorizationTest {
 		when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.just(usrLoginLoc));
 		// when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.empty());
 		when(successLoginRepository.save(any(UserloginLocation.class))).thenReturn(Mono.just(usrLoginLoc));
-		when(keycloakClient.updateUserStatus(any(StatusUpdateRequest.class)))
+		when(keycloakClient.updateUserStatus(username, any(StatusUpdateRequest.class)))
 				.thenReturn(Mono.just(AuthProperties.SUCCESS));
 
 		when(newLocationTokenRepository.findByToken(anyString())).thenReturn(Mono.just(newestToken));
@@ -595,7 +597,7 @@ class LocationServiceAuthorizationTest {
 		when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.just(usrLoginLoc));
 		// when(successLoginRepository.findOneByUsernameIgnoreCase(anyString())).thenReturn(Mono.empty());
 		when(successLoginRepository.save(any(UserloginLocation.class))).thenReturn(Mono.just(usrLoginLoc));
-		when(keycloakClient.updateUserStatus(any(StatusUpdateRequest.class)))
+		when(keycloakClient.updateUserStatus(username, any(StatusUpdateRequest.class)))
 				.thenReturn(Mono.just(AuthProperties.SUCCESS));
 
 		when(newLocationTokenRepository.findByToken(anyString())).thenReturn(Mono.empty());

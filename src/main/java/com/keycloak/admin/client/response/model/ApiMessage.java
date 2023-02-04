@@ -100,6 +100,7 @@ public class ApiMessage extends ApiResponse implements Serializable {
 		this.path = path;
 		this.message = message;
 		this.debugMessage = detailMessage;
+		this.responses = new ArrayList<>();
 	}
 
 	@JsonCreator
@@ -110,6 +111,7 @@ public class ApiMessage extends ApiResponse implements Serializable {
 		this.reqMethod = reqMethod;
 		this.path = path;
 		this.message = message;
+		this.responses = new ArrayList<>();
 	}
 
 	public String getTimestamp() {

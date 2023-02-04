@@ -80,7 +80,7 @@ public class GlobalControllerExceptionHandler {
 	@Value("${api.common.help}")
 	private String moreInfoUrl;
 
-	private String errorCode = ErrorCode.SYS_DEFINED_ERR_CODE.getErrCode();
+	private String errorCode = ErrorCode.SYS_DEFINED_ERR_CODE.getErrCode();  
 
 	/**
 	 * 
@@ -207,12 +207,14 @@ public class GlobalControllerExceptionHandler {
 	 * @param ex
 	 * @return
 	 */
+	/*
 	@ResponseStatus(FORBIDDEN)
 	@ExceptionHandler(AccessDeniedException.class)
 	public @ResponseBody AppResponse handle(ServerHttpRequest request, AccessDeniedException ex) {
 
 		return createHttpErrorInfo(FORBIDDEN, errorCode, request, null, ex);
 	}
+	*/
 
 	/**
 	 * 

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.cometbid.api.handlers.test;
+package com.keycloak.admin.client.api;
 
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.document;

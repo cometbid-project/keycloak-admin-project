@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.keycloak.admin.client.it;
+package com.keycloak.admin.client.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

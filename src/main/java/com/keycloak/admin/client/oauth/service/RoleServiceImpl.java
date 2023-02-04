@@ -14,7 +14,9 @@ import javax.validation.constraints.NotBlank;
 
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.springframework.context.ApplicationEventPublisher;
@@ -80,40 +82,45 @@ public class RoleServiceImpl implements RoleService {
 	public Mono<RoleVO> createRealmRole(@Valid final CreateRoleRequest roleRequest) {
 
 		final String upperRoleName = roleRequest.getRoleName().toUpperCase();
-		final String clientRoleName = StringUtils.prependIfMissing(upperRoleName, ROLE_PREFIX);
-		
-		final String roleDesc = roleRequest.getDescription();
-		log.info("Rolename {}", clientRoleName);
+		final String realmRoleName = StringUtils.prependIfMissing(upperRoleName, ROLE_PREFIX);
 
-		Mono<List<RoleVO>> monoList = findAllRealmRoles().filter(role -> role.getName().equalsIgnoreCase(clientRoleName))
+		final String roleDesc = roleRequest.getDescription();
+		log.info("Rolename {}", realmRoleName);
+
+		Mono<List<RoleVO>> monoList = findAllRealmRoles().filter(role -> role.getName().equalsIgnoreCase(realmRoleName))
 				.collectSortedList();
 
 		return monoList.flatMap(list -> {
 
 			if (!list.isEmpty()) {
-				raiseResourceAlreadyExistException(new Object[] { clientRoleName });
+				raiseResourceAlreadyExistException(new Object[] { realmRoleName });
 			}
 
-			RoleRepresentation realmRole = new RoleRepresentation();
-			realmRole.setName(clientRoleName);
-			realmRole.setDescription(StringUtils.isBlank(roleDesc) ? "Realm role: " + clientRoleName : roleDesc);
-			realmRole.setClientRole(false);
-			realmRole.setComposite(false);
+			RoleRepresentation realmRole = getRoleRepresentation(realmRoleName, roleDesc);
 
-			return createRole(clientRoleName, realmRole);
+			return createRole(realmRoleName, realmRole);
 
-		}).doOnSuccess(profile -> this.eventPublisher
-				.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.CREATE_REALM_ROLE_EVENT, StringUtils.EMPTY,
-						"Realm role creation was successful", ObjectType.USER_AUTH, ContentType.USER_ROLE, roleRequest)))
+		}).doOnSuccess(profile -> this.eventPublisher.publishEvent(new GenericSpringEvent<>(
+				ActivityEventTypes.CREATE_REALM_ROLE_EVENT, StringUtils.EMPTY, "Realm role creation was successful",
+				ObjectType.USER_AUTH, ContentType.USER_ROLE, roleRequest)))
 				.doOnError(ex -> log.error("Error occured while creating Realm role", ex))
 				.onErrorResume(ERROR_Predicate,
 						(ex) -> raiseRuntimeError(i8nMessageAccessor.getLocalizedMessage("role.creation.error"), ex));
 	}
 
+	RoleRepresentation getRoleRepresentation(String realmRoleName, String roleDesc) {
+		RoleRepresentation realmRole = new RoleRepresentation();
+		realmRole.setName(realmRoleName);
+		realmRole.setDescription(StringUtils.isBlank(roleDesc) ? "Realm role: " + realmRoleName : roleDesc);
+		realmRole.setClientRole(false);
+		realmRole.setComposite(false);
+
+		return realmRole;
+	}
+
 	private Mono<RoleVO> createRole(String roleName, RoleRepresentation realmRole) {
 
-		return Mono.fromRunnable(() -> realmResource().roles().create(realmRole))
-				.then(this.findRealmRoleByName(roleName));
+		return Mono.fromRunnable(() -> getRolesResource().create(realmRole)).then(this.findRealmRoleByName(roleName));
 	}
 
 	/**
@@ -124,12 +131,12 @@ public class RoleServiceImpl implements RoleService {
 	 */
 	@Override
 	public Mono<RoleVO> createClientRole(@Valid final CreateRoleRequest roleRequest, @NotBlank final String clientId) {
-		
+
 		final String upperRoleName = roleRequest.getRoleName().toUpperCase();
 		final String clientRoleName = StringUtils.prependIfMissing(upperRoleName, ROLE_PREFIX);
-		
+
 		final String roleDesc = roleRequest.getDescription();
-		
+
 		Mono<List<RoleVO>> monoList = findAllClientRoles(clientId)
 				.filter(role -> role.getName().equalsIgnoreCase(clientRoleName)).collectSortedList();
 
@@ -160,9 +167,9 @@ public class RoleServiceImpl implements RoleService {
 	private Mono<RoleVO> createClientRole(RoleRepresentation clientRole, String clientId) {
 
 		return Mono.fromRunnable(() -> {
-			ClientRepresentation clientRep = realmResource().clients().findByClientId(clientId).get(0);
+			ClientRepresentation clientRep = getClientById(clientId).get(0);
 
-			realmResource().clients().get(clientRep.getId()).roles().create(clientRole);
+			getClientResource(clientRep.getId()).roles().create(clientRole);
 		})
 
 				.then(this.findClientRoleByName(clientRole.getName(), clientId));
@@ -176,8 +183,8 @@ public class RoleServiceImpl implements RoleService {
 	@Override
 	public Flux<RoleVO> findAllRealmRoles() {
 
-		Mono<List<RoleVO>> monoList = Mono.fromCallable(() -> realmResource().roles().list().stream()
-				.map(RoleMapper::toViewObject).collect(Collectors.toList()));
+		Mono<List<RoleVO>> monoList = Mono.fromCallable(
+				() -> getRolesResource().list().stream().map(RoleMapper::toViewObject).collect(Collectors.toList()));
 
 		return monoList.flatMapIterable(list -> list)
 				.doOnComplete(() -> this.eventPublisher.publishEvent(
@@ -198,7 +205,7 @@ public class RoleServiceImpl implements RoleService {
 
 		Mono<ClientRepresentation> monoClientRepresentation = Mono.fromCallable(() -> {
 
-			List<ClientRepresentation> clientsList = realmResource().clients().findByClientId(clientId);
+			List<ClientRepresentation> clientsList = getClientById(clientId);
 			if (clientsList.isEmpty()) {
 				raiseResourceNotFoundError("client.notFound", new Object[] { clientId });
 			}
@@ -217,7 +224,7 @@ public class RoleServiceImpl implements RoleService {
 
 	private Mono<List<RoleVO>> allClientRoles(ClientRepresentation clientRep) {
 
-		return Mono.fromCallable(() -> realmResource().clients().get(clientRep.getId()).roles().list().stream()
+		return Mono.fromCallable(() -> getClientResource(clientRep.getId()).roles().list().stream()
 				.map(RoleMapper::toViewObject).collect(Collectors.toList()));
 	}
 
@@ -232,7 +239,7 @@ public class RoleServiceImpl implements RoleService {
 		final String upperRoleName = roleName.toUpperCase();
 		final String clientRoleName = StringUtils.prependIfMissing(upperRoleName, ROLE_PREFIX);
 
-		return Mono.fromCallable(() -> realmResource().roles().get(clientRoleName).toRepresentation())
+		return Mono.fromCallable(() -> getRolesResource().get(clientRoleName).toRepresentation())
 				.map(RoleMapper::toViewObject)
 				.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { clientRoleName }))
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(new GenericSpringEvent<>(
@@ -253,7 +260,7 @@ public class RoleServiceImpl implements RoleService {
 
 		Mono<ClientRepresentation> monoClientRepresentation = Mono.fromCallable(() -> {
 
-			List<ClientRepresentation> clientsList = realmResource().clients().findByClientId(clientId);
+			List<ClientRepresentation> clientsList = getClientById(clientId);
 			if (clientsList.isEmpty()) {
 				raiseResourceNotFoundError("client.notFound", new Object[] { clientId });
 			}
@@ -277,8 +284,7 @@ public class RoleServiceImpl implements RoleService {
 
 	private Mono<RoleRepresentation> getClientRole(String roleName, ClientRepresentation clientRep) {
 
-		return Mono.fromCallable(
-				() -> realmResource().clients().get(clientRep.getId()).roles().get(roleName).toRepresentation());
+		return Mono.fromCallable(() -> getClientResource(clientRep.getId()).roles().get(roleName).toRepresentation());
 	}
 
 	/**
@@ -292,35 +298,41 @@ public class RoleServiceImpl implements RoleService {
 			@Valid final CreateRoleRequest roleRequest) {
 
 		final String roleToAdd = roleRequest.getRoleName().toUpperCase();
-		final String clientRoleToMakeComposite = roleToMakeComposite.toUpperCase();
+		final String realmRoleToMakeComposite = roleToMakeComposite.toUpperCase();
 
-		final String clientRoleName = StringUtils.prependIfMissing(roleToAdd, ROLE_PREFIX);
-		final String localClientRoleName = StringUtils.prependIfMissing(clientRoleToMakeComposite, ROLE_PREFIX);
+		final String realmRoleName = StringUtils.prependIfMissing(roleToAdd, ROLE_PREFIX);
+		final String localRealmRoleName = StringUtils.prependIfMissing(realmRoleToMakeComposite, ROLE_PREFIX);
 
 		// final String roleToAdd = roleRequest.getRoleName().toUpperCase();
-		if (clientRoleName.equalsIgnoreCase(localClientRoleName)) {
-			raiseBadRequestException("role.conflict", new Object[] { localClientRoleName, clientRoleName });
+		if (realmRoleName.equalsIgnoreCase(localRealmRoleName)) {
+			raiseBadRequestException("role.conflict", new Object[] { localRealmRoleName, realmRoleName });
 		}
 
 		Mono<RoleRepresentation> monoResult = Mono
-				.fromCallable(() -> realmResource().roles().get(localClientRoleName).toRepresentation())
-				.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { localClientRoleName }));
+				.fromCallable(() -> getRolesResource().get(localRealmRoleName).toRepresentation())
+				.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { localRealmRoleName }));
 
 		return monoResult.flatMap(role -> {
 
 			Mono<RoleRepresentation> monoToAddResult = Mono
-					.fromCallable(() -> realmResource().roles().get(clientRoleName).toRepresentation())
-					.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { clientRoleName }));
+					.fromCallable(() -> getRolesResource().get(realmRoleName).toRepresentation())
+					.switchIfEmpty(altRoleRepresentation(realmRoleName, roleRequest.getDescription()));
 
 			return addToRealmRole(role, monoToAddResult);
 		}).doOnSuccess(profile -> this.eventPublisher
 				.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.CREATE_COMPOSITE_ROLE_EVENT,
-						StringUtils.EMPTY, "Realm role " + localClientRoleName + " was made composite successfully",
+						StringUtils.EMPTY, "Realm role " + localRealmRoleName + " was made composite successfully",
 						ObjectType.USER_AUTH, ContentType.USER_ROLE)))
 				.doOnError(ex -> log.error("Error occured while making Realm role composite", ex))
 				.onErrorResume(ERROR_Predicate, (ex) -> raiseRuntimeError(
 						i8nMessageAccessor.getLocalizedMessage("role.composite.error", new Object[] {}), ex));
 
+	}
+
+	private Mono<RoleRepresentation> altRoleRepresentation(String realmRoleName, String description) {
+
+		return Mono.fromRunnable(() -> getRolesResource().create(getRoleRepresentation(realmRoleName, description)))
+				.thenReturn(getRolesResource().get(realmRoleName).toRepresentation());
 	}
 
 	private Mono<String> addToRealmRole(RoleRepresentation role, Mono<RoleRepresentation> monoToAddResult) {
@@ -358,7 +370,7 @@ public class RoleServiceImpl implements RoleService {
 
 		Mono<ClientRepresentation> monoClientRepresentation = Mono.fromCallable(() -> {
 
-			List<ClientRepresentation> clientsList = realmResource().clients().findByClientId(clientId);
+			List<ClientRepresentation> clientsList = getClientById(clientId);
 			if (clientsList.isEmpty()) {
 				raiseResourceNotFoundError("client.notFound", new Object[] { clientId });
 			}
@@ -366,7 +378,8 @@ public class RoleServiceImpl implements RoleService {
 		});
 
 		return monoClientRepresentation
-				.flatMap(clientRep -> prepareClientRole(localClientRoleName, clientRoleName, clientRep))
+				.flatMap(clientRep -> prepareClientRole(localClientRoleName, clientRoleName,
+						roleRequest.getDescription(), clientRep.getClientId()))
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.CREATE_COMPOSITE_ROLE_EVENT, StringUtils.EMPTY,
 								"Client role " + localClientRoleName + " was made composite successfully",
@@ -376,19 +389,18 @@ public class RoleServiceImpl implements RoleService {
 						i8nMessageAccessor.getLocalizedMessage("role.composite.error", new Object[] {}), ex));
 	}
 
-	private Mono<String> prepareClientRole(String roleToMakeComposite, String roleToAdd,
-			ClientRepresentation clientRep) {
+	private Mono<String> prepareClientRole(String roleToMakeComposite, String clientRoleName, String description,
+			String clientId) {
 
 		Mono<RoleRepresentation> monoResult = Mono
-				.fromCallable(() -> realmResource().clients().get(clientRep.getId()).roles().get(roleToMakeComposite)
-						.toRepresentation())
+				.fromCallable(() -> getClientResource(clientId).roles().get(roleToMakeComposite).toRepresentation())
 				.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { roleToMakeComposite }));
 
 		return monoResult.flatMap(role -> {
 
 			Mono<RoleRepresentation> monoToAddResult = Mono
-					.fromCallable(() -> realmResource().roles().get(roleToAdd).toRepresentation())
-					.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { roleToAdd }));
+					.fromCallable(() -> getRolesResource().get(clientRoleName).toRepresentation())
+					.switchIfEmpty(createClientRole(clientId, clientRoleName, description));
 
 			return addToClientRole(role, monoToAddResult);
 		});
@@ -430,7 +442,7 @@ public class RoleServiceImpl implements RoleService {
 		// final String clientRoleName = clientRole.getRoleName().toUpperCase();
 		Mono<ClientRepresentation> monoClientRepresentation = Mono.fromCallable(() -> {
 
-			List<ClientRepresentation> clientsList = realmResource().clients().findByClientId(clientId);
+			List<ClientRepresentation> clientsList = getClientById(clientId);
 			if (clientsList.isEmpty()) {
 				raiseResourceNotFoundError("client.notFound", new Object[] { clientId });
 			}
@@ -439,10 +451,11 @@ public class RoleServiceImpl implements RoleService {
 
 		return monoClientRepresentation.flatMap(clientRep -> {
 			Mono<RoleRepresentation> monoResult = Mono
-					.fromCallable(() -> realmResource().roles().get(localRealmRoleName).toRepresentation())
+					.fromCallable(() -> getRolesResource().get(localRealmRoleName).toRepresentation())
 					.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { localRealmRoleName }));
 
-			return monoResult.flatMap(role -> addToRealmRole(role, clientRoleName, clientRep));
+			return monoResult.flatMap(
+					role -> addToRealmRole(role, clientRoleName, clientRole.getDescription(), clientRep.getClientId()));
 
 		}).doOnSuccess(profile -> this.eventPublisher
 				.publishEvent(new GenericSpringEvent<>(ActivityEventTypes.CREATE_COMPOSITE_ROLE_EVENT,
@@ -453,12 +466,12 @@ public class RoleServiceImpl implements RoleService {
 						i8nMessageAccessor.getLocalizedMessage("role.composite.error", new Object[] {}), ex));
 	}
 
-	private Mono<String> addToRealmRole(RoleRepresentation role, final String clientRoleName,
-			ClientRepresentation clientRep) {
+	private Mono<String> addToRealmRole(RoleRepresentation role, final String clientRoleName, String description,
+			String clientId) {
 
-		Mono<RoleRepresentation> monoClientRole = Mono.fromCallable(
-				() -> realmResource().clients().get(clientRep.getId()).roles().get(clientRoleName).toRepresentation())
-				.switchIfEmpty(raiseResourceNotFoundError("role.notFound", new Object[] { clientRoleName }));
+		Mono<RoleRepresentation> monoClientRole = Mono
+				.fromCallable(() -> getClientResource(clientId).roles().get(clientRoleName).toRepresentation())
+				.switchIfEmpty(createClientRole(clientId, clientRoleName, description));
 
 		return monoClientRole.flatMap(roleRepresentation -> {
 			List<RoleRepresentation> composites = new LinkedList<>();
@@ -468,5 +481,58 @@ public class RoleServiceImpl implements RoleService {
 					.thenReturn(String.format("Role %s made a composite role of '%s'", role.getName(),
 							roleRepresentation.getName()));
 		});
+	}
+
+	private Mono<RoleRepresentation> createClientRole(String clientId, String clientRoleName, String description) {
+
+		return Mono.fromRunnable(() -> {
+			ClientRepresentation clientRep = getClientById(clientId).get(0);
+
+			RoleRepresentation roleRep = getRoleRepresentation(clientRoleName, description);
+
+			getClientResource(clientRep.getId()).roles().create(roleRep);
+
+		}).thenReturn(getRolesResource().get(clientRoleName).toRepresentation());
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public Mono<String> deleteRealmRole(String realmRoleName) {
+
+		return Mono.fromRunnable(() -> this.getRolesResource().deleteRole(realmRoleName))
+				.then(Mono.just(i8nMessageAccessor.getLocalizedMessage("role.delete.success")))
+				.doOnError(ex -> log.error("Error occured while deleting corresponding Realm role by name", ex))
+				.onErrorResume(ERROR_Predicate, (ex) -> raiseRuntimeError(
+						i8nMessageAccessor.getLocalizedMessage("role.delete.error", new Object[] { realmRoleName }),
+						ex));
+	}
+
+	/**
+	 * 
+	 */
+	@Override
+	public Mono<String> deleteClientRole(String clientId, String roleName) {
+
+		return Mono.fromRunnable(() -> getClientResource(clientId).roles().deleteRole(roleName))
+				.then(Mono.just(i8nMessageAccessor.getLocalizedMessage("role.delete.success")))
+				.doOnError(ex -> log.error("Error occured while deleting corresponding Client role by name", ex))
+				.onErrorResume(ERROR_Predicate,
+						(ex) -> raiseRuntimeError(
+								i8nMessageAccessor.getLocalizedMessage("role.delete.error", new Object[] { roleName }),
+								ex));
+	}
+
+	private ClientResource getClientResource(String clientId) {
+		return this.realmResource().clients().get(clientId);
+	}
+
+	private RolesResource getRolesResource() {
+		return this.realmResource().roles();
+	}
+
+	private List<ClientRepresentation> getClientById(String clientId) {
+		return realmResource().clients().findByClientId(clientId);
 	}
 }

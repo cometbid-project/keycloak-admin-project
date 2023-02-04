@@ -2,6 +2,7 @@ package com.keycloak.admin.client.common.utils;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +47,7 @@ public class GeneralUtils {
 	public static UserVO buildUserInfo(UserVO localUser) {
 
 		return UserVO.builder().id(localUser.getId()).displayName(localUser.getDisplayName())
-				.email(localUser.getEmail()).roles(localUser.getRoles()).build();
+				.email(localUser.getEmail()).roles(new HashSet<>(localUser.getRoles())).build(); 
 	}
 
 	public static String getAppUrl(URI uri, String path, Map<String, String> parameters) {

@@ -37,7 +37,7 @@ public class TotpRequest {
 	/**
 	 * 
 	 */
-	private TotpRequest() {
+	public TotpRequest() {
 		this(null, null);
 	}
 
@@ -45,7 +45,7 @@ public class TotpRequest {
 	 * @param totpCode
 	 * @param totpSessionId
 	 */
-	@JsonCreator
+	//@JsonCreator
 	public TotpRequest(@NotBlank(message = "{totpCode.notBlank}") String totpCode,
 			@NotBlank(message = "{totpSession.notBlank}") String totpSessionId) {
 		super();

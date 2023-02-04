@@ -4,6 +4,7 @@
 package com.keycloak.admin.client.handlers;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -58,9 +59,9 @@ public class TokenManagementHandler {
 
 		final Mono<TotpRequest> validateRequest = r.bodyToMono(TotpRequest.class);
 
-		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requstBody -> {
+		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requestBody -> {
 
-			final Mono<AuthenticationResponse> monoAuthResponse = authService.verifyTotpCode(requstBody,
+			final Mono<AuthenticationResponse> monoAuthResponse = authService.verifyTotpCode(requestBody,
 					r.exchange().getRequest());
 
 			return this.responseCreator.defaultReadResponse(monoAuthResponse, AuthenticationResponse.class, null, r);
@@ -73,12 +74,13 @@ public class TokenManagementHandler {
 	 * @param activate2FA
 	 * @return
 	 */
+	@Loggable
 	public Mono<ServerResponse> sendOtpCode(ServerRequest r) {
 
 		final Mono<SendOtpRequest> validateRequest = r.bodyToMono(SendOtpRequest.class);
 
-		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requstBody -> {
-			return authService.sendOtpCode(requstBody, r.exchange().getRequest())
+		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requestBody -> {
+			return authService.sendOtpCode(requestBody, r.exchange().getRequest())
 					.flatMap(msg -> this.responseCreator.createSuccessMessageResponse(msg, null, null, r))
 					.timeout(Duration.ofSeconds(3));
 		});
@@ -89,10 +91,12 @@ public class TokenManagementHandler {
 	 * @param r
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
+	@Loggable
 	public Mono<ServerResponse> activateMfa(ServerRequest r) {
 
 		Mono<EnableMfaResponse> monoAuth = authUserMgr.getLoggedInUser(r.exchange())
-				.flatMap(username -> authService.updateMFA(username, true));
+				.flatMap(username -> authService.updateMFA(username, true)); 
 
 		return this.responseCreator.defaultReadResponse(monoAuth, EnableMfaResponse.class, null, r)
 				.switchIfEmpty(ServerResponse.noContent().build());
@@ -103,6 +107,8 @@ public class TokenManagementHandler {
 	 * @param r
 	 * @return
 	 */
+	@PreAuthorize("isAuthenticated()")
+	@Loggable
 	public Mono<ServerResponse> deactivateMfa(ServerRequest r) {
 
 		Mono<EnableMfaResponse> monoAuth = authUserMgr.getLoggedInUser(r.exchange())
@@ -117,6 +123,7 @@ public class TokenManagementHandler {
 	 * @param r
 	 * @return
 	 */
+	@Loggable
 	public Mono<ServerResponse> renewActivationToken(ServerRequest r) {
 
 		final Optional<String> tokenParameter = r.queryParam("token");
@@ -134,6 +141,7 @@ public class TokenManagementHandler {
 	 * @param r
 	 * @return
 	 */
+	@Loggable
 	public Mono<ServerResponse> validateActivationToken(ServerRequest r) {
 
 		final Optional<String> tokenParameter = r.queryParam("token");

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.validation.Valid;
 
+import com.keycloak.admin.client.aop.qualifiers.Loggable;
 import com.keycloak.admin.client.common.utils.ResponseCreator;
 import com.keycloak.admin.client.components.CustomMessageSourceAccessor;
 import com.keycloak.admin.client.models.AuthenticationRequest;
@@ -47,24 +48,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class HomeController {
 
 	private final KeycloakRestService restService;
-	private final UserAuthenticationService userAuthService;
-	private final CustomMessageSourceAccessor i8nMessageAccessor;
-	private final ResponseCreator responseCreator;
 
-	public HomeController(
-			KeycloakRestService restService, CustomMessageSourceAccessor i8nMessageAccessor,
-			ResponseCreator responseCreator, UserAuthenticationService userAuthService) {
+	public HomeController(KeycloakRestService restService) {
 
 		super();
 		this.restService = restService;
-		this.userAuthService = userAuthService;
-		this.i8nMessageAccessor = i8nMessageAccessor;
-		this.responseCreator = responseCreator;
 	}
 
 	/**
 	 * 
 	 */
+	@Loggable
 	@GetMapping("/about-me")
 	Mono<Map<String, Object>> claims(@AuthenticationPrincipal JwtAuthenticationToken auth) {
 		return Mono.just(auth.getTokenAttributes());
@@ -75,6 +69,7 @@ public class HomeController {
 	 * @param auth
 	 * @return
 	 */
+	@Loggable
 	@GetMapping("/token")
 	Mono<String> token(@AuthenticationPrincipal JwtAuthenticationToken auth) {
 		return Mono.just(auth.getToken().getTokenValue());
@@ -84,6 +79,7 @@ public class HomeController {
 	 * 
 	 * @return
 	 */
+	@Loggable
 	@GetMapping("/role_admin")
 	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	Mono<String> role_admin() {
@@ -94,6 +90,7 @@ public class HomeController {
 	 * 
 	 * @return
 	 */
+	@Loggable
 	@GetMapping("/scope_messages_read")
 	@PreAuthorize("hasAuthority('SCOPE_MESSAGES:READ')")
 	Mono<String> scope_api_me_read() {
@@ -105,6 +102,7 @@ public class HomeController {
 	 * @param authHeader
 	 * @return
 	 */
+	@Loggable
 	@GetMapping("/user-info")
 	public Publisher<ResponseEntity<UserInfo>> userInfo(@AuthenticationPrincipal JwtAuthenticationToken auth) {
 

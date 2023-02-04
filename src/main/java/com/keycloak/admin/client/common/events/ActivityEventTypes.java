@@ -61,6 +61,7 @@ public interface ActivityEventTypes {
 	public static final String SEARCH_REALM_ROLE_EVENT = "SearchRealmRoleEvent";
 	public static final String SEARCH_CLIENT_ROLE_EVENT = "SearchClientRoleEvent";
 	public static final String CREATE_COMPOSITE_ROLE_EVENT = "CreateCompositeRealmRoleEvent";
-	public static final Object USER_LOCATION_SAVED_EVENT = "UserLocationSavedEvent"; 
-
+	public static final String USER_LOCATION_SAVED_EVENT = "UserLocationSavedEvent";
+	public static final String DELETE_USER_EVENT = "DeleteUserProfileEvent";  
+	
 }

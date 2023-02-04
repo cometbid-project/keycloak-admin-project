@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.keycloak.admin.client.it;
+package com.keycloak.admin.client.integration;
 
 import com.keycloak.admin.client.test.config.KeycloakTestContainers;
 

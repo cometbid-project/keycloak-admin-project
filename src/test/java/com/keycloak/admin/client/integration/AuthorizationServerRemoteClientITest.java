@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.keycloak.admin.client.it;
+package com.keycloak.admin.client.integration;
 
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -10,6 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
  *
  */
 @SpringBootTest
-class EmailActionEventListenerITest {
+class AuthorizationServerRemoteClientITest {
 
 }

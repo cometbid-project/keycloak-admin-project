@@ -25,8 +25,7 @@ public class KeycloakConfiguration {
 
 	@Bean
 	Converter<Jwt, Collection<GrantedAuthority>> keycloakGrantedAuthoritiesConverter(final AuthProperties keycloakProperties) {
-		String clientId = keycloakProperties.getAdminClientId();
-		return new KeycloakGrantedAuthoritiesConverter(clientId);
+		return new KeycloakGrantedAuthoritiesConverter(keycloakProperties);
 	}
 
 	@Bean

@@ -7,6 +7,8 @@ package com.keycloak.admin.client.oauth.service.it;
 
 import java.util.Map;
 
+import javax.validation.constraints.NotBlank;
+
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
@@ -17,6 +19,7 @@ import com.keycloak.admin.client.models.UserRegistrationRequest;
 import com.keycloak.admin.client.models.UserVO;
 
 import lombok.NonNull;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -66,5 +69,12 @@ public interface UserCredentialService {
 	 */
 	Mono<LocalUser> processUserRegistration(String registrationId, Map<String, Object> attributes, OidcIdToken idToken,
 		OidcUserInfo userInfo);
+
+	/**
+	 * 
+	 * @param userId
+	 * @return
+	 */
+	Mono<String> deleteUser(@NotBlank String userId);
 
 }

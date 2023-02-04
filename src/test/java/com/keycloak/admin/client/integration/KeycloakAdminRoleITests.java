@@ -1,4 +1,4 @@
-package com.keycloak.admin.client.it;
+package com.keycloak.admin.client.integration;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
  *
  */
 @SpringBootTest
-class KeycloakAdminRoleITests {
+class KeycloakAdminRoleITests{
 	
 	@Autowired private ApplicationRouter applicationRouter;
 	@Autowired private ApplicationHandler applicationHandler;

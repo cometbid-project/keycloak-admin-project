@@ -64,9 +64,9 @@ import com.keycloak.admin.client.models.mappers.UserMapper;
 import com.keycloak.admin.client.oauth.service.ActivationTokenServiceImpl;
 import com.keycloak.admin.client.oauth.service.GatewayRedisCache;
 import com.keycloak.admin.client.oauth.service.KeycloakOauthClient;
-import com.keycloak.admin.client.oauth.service.ReactiveRedisComponent;
 import com.keycloak.admin.client.oauth.service.RoleServiceImpl;
 import com.keycloak.admin.client.oauth.service.it.RoleService;
+import com.keycloak.admin.client.redis.service.ReactiveRedisComponent;
 import com.keycloak.admin.client.token.utils.TotpManagerImpl;
 
 import lombok.extern.log4j.Log4j2;

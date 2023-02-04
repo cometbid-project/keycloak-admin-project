@@ -3,6 +3,8 @@
  */
 package com.keycloak.admin.client.oauth.service.it;
 
+import javax.validation.constraints.NotBlank;
+
 import com.keycloak.admin.client.models.CreateGroupRequest;
 import com.keycloak.admin.client.models.GroupVO;
 
@@ -22,5 +24,7 @@ public interface GroupService {
 	Flux<GroupVO> findAllRealmGroups();
 	
 	Mono<GroupVO> findRealmGroupById(final String id);
+
+	Mono<String> deleteRealmGroup(String groupId); 
 
 }
