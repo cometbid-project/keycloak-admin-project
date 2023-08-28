@@ -6,6 +6,7 @@ package com.keycloak.admin.client.oauth.service;
 import com.keycloak.admin.client.config.AuthProperties;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import com.keycloak.admin.client.oauth.service.it.ReactiveClientInterface;
+import com.keycloak.admin.client.token.utils.KeycloakJwtTokenUtil;
 
 import io.netty.handler.timeout.ReadTimeoutException;
 import lombok.extern.log4j.Log4j2;
@@ -13,13 +14,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.UserInfo;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import org.springframework.http.HttpHeaders;
-
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -37,7 +36,7 @@ import javax.validation.constraints.NotBlank;
 
 /**
  * <pre>
- * com.edw.service.KeycloakRestService
+ * com.keycloak.admin.client.oauth.service.KeycloakRestService
  * </pre>
  *
  * @author Muhammad Edwin < edwin at redhat dot com > 18 Agt 2020 21:47
@@ -50,15 +49,13 @@ public class KeycloakRestService {
 	private final WebClient webClient;
 	private final AuthProperties authProperties;
 	private final ReactiveClientInterface reactiveClient;
-	private final Keycloak keycloak;
 
-	public KeycloakRestService(@Qualifier("keycloakClient") WebClient webClient, AuthProperties clientProperties,
-			ReactiveClientInterface reactiveClient, Keycloak keycloak) {
+	public KeycloakRestService(@Qualifier("keycloak-webClient") WebClient webClient, AuthProperties clientProperties,
+			ReactiveClientInterface reactiveClient) {
 
 		this.webClient = webClient;
 		this.authProperties = clientProperties;
 		this.reactiveClient = reactiveClient;
-		this.keycloak = keycloak;
 	}
 
 	/**
@@ -69,7 +66,7 @@ public class KeycloakRestService {
 	 * @param password
 	 * @return
 	 */
-	public Mono<String> login(@NotBlank final String username, @NotBlank final String password) {
+	public Mono<AccessTokenResponse> login(@NotBlank final String username, @NotBlank final String password) {
 		String keycloakTokenUri = authProperties.getTokenUrl();
 
 		Map<String, List<String>> headers = new HashMap<>();
@@ -79,12 +76,12 @@ public class KeycloakRestService {
 		formData.add("username", username);
 		formData.add("password", password);
 		formData.add("client_id", authProperties.getAdminClientId());
-		formData.add("grant_type", OAuth2Constants.PASSWORD);
 		formData.add("client_secret", authProperties.getAdminClientSecret());
+		formData.add("grant_type", OAuth2Constants.PASSWORD);
 		formData.add("scope", authProperties.getScope());
 
-		return reactiveClient.performPostToMono(webClient, URI.create(keycloakTokenUri), formData, String.class,
-				headers, null);
+		return reactiveClient.performPostFormToMono(webClient, URI.create(keycloakTokenUri), formData,
+				AccessTokenResponse.class, headers, null);
 	}
 
 	/**
@@ -109,11 +106,11 @@ public class KeycloakRestService {
 		refreshTokenFormData.add("client_secret", authProperties.getAdminClientSecret());
 		refreshTokenFormData.add("refresh_token", refreshToken);
 
-		Mono<String> monoAccessCode = reactiveClient.performPostFormToMono(webClient, URI.create(keycloakTokenUri),
-				refreshTokenFormData, String.class, headers, null);
+		Mono<AccessTokenResponse> monoAccessCode = reactiveClient.performPostFormToMono(webClient,
+				URI.create(keycloakTokenUri), refreshTokenFormData, AccessTokenResponse.class, headers, null);
 
-		return monoAccessCode.map(accessCode -> KeycloakJwtTokenUtil.generateLoginResponse(accessCode,
-				Collections.emptyList(), username));
+		return monoAccessCode.map(
+				tokenGen -> KeycloakJwtTokenUtil.generateLoginResponse(tokenGen, Collections.emptyList(), username));
 	}
 
 	/**
@@ -122,8 +119,8 @@ public class KeycloakRestService {
 	 * @param refreshToken
 	 * @return
 	 */
-	public Mono<String> logout(@NotBlank final String refreshToken) {
-		String keycloakInvalidateTokenUri = authProperties.getLogoutUrl();
+	public Mono<AccessTokenResponse> logout(@NotBlank final String refreshToken) {
+		String keycloakInvalidateTokenUri = authProperties.getKeycloakLogout();
 
 		Map<String, List<String>> headers = new HashMap<>();
 		headers.put(HttpHeaders.CONTENT_TYPE, Arrays.asList(MediaType.APPLICATION_FORM_URLENCODED_VALUE));
@@ -134,30 +131,30 @@ public class KeycloakRestService {
 		formData.add("refresh_token", refreshToken);
 
 		return reactiveClient.performPostFormToMono(webClient, URI.create(keycloakInvalidateTokenUri), formData,
-				String.class, headers, null);
+				AccessTokenResponse.class, headers, null);
 	}
 
 	/**
 	 * 
-	 * @param token
+	 * @param refreshToken
 	 * @return
-	 * @throws Exception
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Flux<String> getUserRoles(@NotBlank final String token) {
-		// Get realm role "tester" (requires view-realm role)
-		String appRealm = authProperties.getAppRealm();
+	public Mono<String> revokeAccessToken(@NotBlank final String accessToken) {
 
-		Mono<UserInfo> userInfoResponse = getUserInfo(token);
+		String revokeTokenUrl = authProperties.getRevokeTokenUrl();
 
-		return userInfoResponse.flatMap(userInfo -> findUser(userInfo, appRealm)).map(p -> p.getRealmRoles())
-				.flatMapMany(Flux::fromIterable);
-	}
+		Map<String, List<String>> headers = new HashMap<>();
+		headers.put(HttpHeaders.CONTENT_TYPE, Arrays.asList(MediaType.APPLICATION_FORM_URLENCODED_VALUE));
 
-	private Mono<UserRepresentation> findUser(UserInfo userInfo, String appRealm) {
-		String username = userInfo.getPreferredUsername();
+		// get access token
+		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+		formData.add("client_id", authProperties.getAdminClientId());
+		formData.add("client_secret", authProperties.getAdminClientSecret());
+		formData.add("token", accessToken);
+		formData.add("token_type_hint", "access_token");
 
-		return Mono.fromCallable(() -> keycloak.realm(appRealm).users().search(username).get(0));
+		return reactiveClient.performPostFormToMono(webClient, URI.create(revokeTokenUrl), formData, String.class,
+				headers, null);
 	}
 
 	/**
@@ -168,10 +165,12 @@ public class KeycloakRestService {
 	 * @return
 	 * @throws Exception
 	 */
-	public Mono<UserInfo> checkValidity(@NotBlank final String token) {
+	public Mono<Boolean> checkValidity(@NotBlank final String token) {
 
-		return getUserInfo(token).onErrorReturn(Exception.class, new UserInfo()).doOnError(ReadTimeoutException.class,
-				ex -> log.error("Server timed out couldn't complete the process"));
+		return getUserInfo(token).thenReturn(true)
+				.doOnError(ReadTimeoutException.class,
+						ex -> log.error("Server timed out couldn't complete the process"))
+				.onErrorReturn(Exception.class, false);
 	}
 
 	/**
@@ -186,10 +185,7 @@ public class KeycloakRestService {
 		headers.add("Authorization", AuthProperties.BEARER + accessToken);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
 
-		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-
-		return reactiveClient.performPostFormToMono(webClient, URI.create(keycloakUserInfo), formData, UserInfo.class,
-				headers, null);
+		return reactiveClient.performGetToMono(webClient, URI.create(keycloakUserInfo), UserInfo.class, headers, null);
 	}
 
 	/**
@@ -201,9 +197,9 @@ public class KeycloakRestService {
 	 * @param targetClientId
 	 * @return
 	 */
-	public Mono<String> doTokenExchange(@NotBlank final String token, @NotBlank final String startingClientId,
-			@NotBlank final String startingClientSecret, @NotBlank final String username,
-			@NotBlank final String targetClientId) {
+	public Mono<AccessTokenResponse> doTokenExchange(@NotBlank final String token,
+			@NotBlank final String startingClientId, @NotBlank final String startingClientSecret,
+			@NotBlank final String username, @NotBlank final String targetClientId) {
 		String keycloakTokenUri = authProperties.getTokenUrl();
 
 		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
@@ -218,8 +214,8 @@ public class KeycloakRestService {
 		formData.add("audience", targetClientId);
 		formData.add("requested_subject", username);
 
-		return reactiveClient.performPostFormToMono(webClient, URI.create(keycloakTokenUri), formData, String.class,
-				headers, null);
+		return reactiveClient.performPostFormToMono(webClient, URI.create(keycloakTokenUri), formData,
+				AccessTokenResponse.class, headers, null);
 	}
 
 	/**
@@ -233,11 +229,11 @@ public class KeycloakRestService {
 			@NotBlank final String startingClientId, @NotBlank final String startingClientSecret,
 			@NotBlank final String username, @NotBlank final String targetClientId) {
 
-		Mono<String> monoAccessCode = doTokenExchange(token, targetClientId, startingClientSecret, username,
-				targetClientId);
+		Mono<AccessTokenResponse> monoAccessCode = doTokenExchange(token, targetClientId, startingClientSecret,
+				username, targetClientId);
 
-		return monoAccessCode.map(accessCode -> KeycloakJwtTokenUtil.generateLoginResponse(accessCode,
-				Collections.emptyList(), username));
+		return monoAccessCode.map(
+				tokenGen -> KeycloakJwtTokenUtil.generateLoginResponse(tokenGen, Collections.emptyList(), username));
 	}
 
 }

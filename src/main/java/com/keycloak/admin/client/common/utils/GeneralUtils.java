@@ -1,6 +1,8 @@
 package com.keycloak.admin.client.common.utils;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,8 +71,8 @@ public class GeneralUtils {
 		builder.setParameters(list);
 		try {
 			return builder.build().toURL().toString();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
+		} catch (URISyntaxException | MalformedURLException e) {
+			// TODO Auto-generated catch block   
 			// e.printStackTrace();
 			String url = uri.toString() + path + "?" + buildParameters(parameters);
 			log.error("Could not build URL from parameters...defaulting to {}", url);

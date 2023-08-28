@@ -781,7 +781,10 @@ class UserServiceAuthorizationTest {
 
 		when(keycloakClient.assignUserToGroup(anyString(),anyString())).thenReturn(Mono.just(msg));
 
-		StepVerifier.create(userService.assignToGroup(id,groupId)).expectNextMatches(result->StringUtils.isNotBlank(result)&&result.equals(msg)))).verifyComplete();
+		StepVerifier.create(userService.assignToGroup(id,groupId))
+				.expectNextMatches(result ->
+						StringUtils.isNotBlank(result) && result.equals(msg))
+				.verifyComplete();
 	}
 
 	/**
@@ -829,7 +832,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_DEVELOPER.getName();
 		String msg = String.format("User with id: %s has a new role of '%s'", id, roleName);
 
-		when(keycloakClient.assignRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignRealmRole(id, roleName))
 				.expectNextMatches(result -> StringUtils.isNotBlank(result) && result.equals(msg)).verifyComplete();
@@ -847,7 +850,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_DEVELOPER.getName();
 		String msg = String.format("User with id: %s has a new role of '%s'", id, roleName);
 
-		when(keycloakClient.assignRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignRealmRole(id, roleName)).verifyError(AccessDeniedException.class);
 	}
@@ -863,7 +866,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_DEVELOPER.getName();
 		String msg = String.format("User with id: %s has a new role of '%s'", id, roleName);
 
-		when(keycloakClient.assignRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserRealmRole(anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignRealmRole(id, roleName)).verifyError(AccessDeniedException.class);
 	}
@@ -881,7 +884,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_ACTUATOR.getName();
 		String msg = String.format("User with id: %s has a new Client(%s) role of '%s'", id, clientId, roleName);
 
-		when(keycloakClient.assignClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignClientRoleToUser(id, roleName, clientId))
 				.expectNextMatches(result -> StringUtils.isNotBlank(result) && result.equals(msg)).verifyComplete();
@@ -900,7 +903,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_ACTUATOR.getName();
 		String msg = String.format("User with id: %s has a new Client(%s) role of '%s'", id, clientId, roleName);
 
-		when(keycloakClient.assignClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignClientRoleToUser(id, roleName, clientId))
 				.verifyError(AccessDeniedException.class);
@@ -918,7 +921,7 @@ class UserServiceAuthorizationTest {
 		String roleName = Role.ROLE_ACTUATOR.getName();
 		String msg = String.format("User with id: %s has a new Client(%s) role of '%s'", id, clientId, roleName);
 
-		when(keycloakClient.assignClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
+		when(keycloakClient.assignUserClientRole(anyString(), anyString(), anyString())).thenReturn(Mono.just(msg));
 
 		StepVerifier.create(userService.assignClientRoleToUser(id, roleName, clientId))
 				.verifyError(AccessDeniedException.class);

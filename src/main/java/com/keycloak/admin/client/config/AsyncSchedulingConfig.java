@@ -29,8 +29,9 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+//import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.keycloak.admin.client.common.utils.BlockingThreadPoolExecutor;
+import com.keycloak.admin.client.common.utils.CustomThreadFactoryBuilder;
 import com.keycloak.admin.client.common.utils.DateUtil;
 
 import lombok.extern.log4j.Log4j2;
@@ -156,11 +157,13 @@ public class AsyncSchedulingConfig implements AsyncConfigurer, SchedulingConfigu
 		}
 	}
 
-	@Bean(name = "merchantSchedulerThread", destroyMethod = "shutdown")
+	@Bean(name = "gatewaySchedulerThread", destroyMethod = "shutdown")
 	public Executor taskExecutor() throws InterruptedException {
-		ThreadFactory customThreadfactory = new ThreadFactoryBuilder()
-				.setNameFormat("Merchant-Service-JobScheduler-Executor-WorkerthreadPool-%d").setDaemon(false)
-				.setPriority(Thread.MAX_PRIORITY).setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+		ThreadFactory customThreadfactory = new CustomThreadFactoryBuilder()
+				.setNamePrefix("Gateway-WorkerthreadPool")
+				.setDaemon(false)
+				.setPriority(Thread.MAX_PRIORITY)
+				.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 					@Override
 					public void uncaughtException(Thread t, Throwable e) {
 

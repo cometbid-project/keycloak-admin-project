@@ -41,6 +41,7 @@ public enum ErrorCode {
 	ACCOUNT_NOT_FOUND_ERR_CODE("ACCT-NF-001", "account.not.found"),
 	USER_EXIST_ERR_CODE("USR-EXIST-001", "user.exist.err"), USER_NOT_FOUND_ERR_CODE("USR-NF-001", "user.not.found"),
 	EXPIRED_PROFILE_ERR_CODE("USR-EXP-001", "profile.expired"),
+	NOATTRIBUTES_PROFILE_ERR_CODE("USR-NOATTR-001", "profile.noattr"),
 	LOCKED_PROFILE_ERR_CODE("USR-LOCK-001", "profile.locked"),
 	UNVERIFIED_PROFILE_ERR_CODE("USR-UNV-001", "profile.unverified"),
 	REQUEST_CONNECT_TIMEOUT_ERR_CODE("TIMEOUT-001", "connect.timeout.err"),

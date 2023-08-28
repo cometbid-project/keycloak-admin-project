@@ -39,7 +39,7 @@ public class Username {
 		this(username, null);
 	}
 	
-	@JsonCreator
+	//@JsonCreator
 	public Username(String username, String roles) {
 		this.username = username;
 		this.roles = roles;

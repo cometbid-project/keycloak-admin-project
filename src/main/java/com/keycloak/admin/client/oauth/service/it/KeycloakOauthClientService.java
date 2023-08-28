@@ -4,10 +4,12 @@
 package com.keycloak.admin.client.oauth.service.it;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-
+import javax.validation.constraints.NotNull;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.keycloak.admin.client.models.AuthenticationRequest;
@@ -36,7 +38,7 @@ public interface KeycloakOauthClientService {
 	 * @param password
 	 * @return
 	 */
-	Mono<AuthenticationResponse> passwordGrantLogin(AuthenticationRequest authRequest);
+	Mono<AuthenticationResponse> passwordGrantLogin(@Valid AuthenticationRequest authRequest);
 
 	/**
 	 * 
@@ -44,14 +46,28 @@ public interface KeycloakOauthClientService {
 	 * @param targetClientId
 	 * @return
 	 */
-	Mono<String> generateToken(String username, String targetClientId);
+	Mono<AuthenticationResponse> generateToken(@NotBlank String username, @NotBlank String targetClientId);
 
 	/**
 	 * 
 	 * @param username
 	 * @return
 	 */
-	Mono<UserRepresentation> findUserByUsername(String username);
+	Mono<UserRepresentation> findUserByUsername(@NotBlank String username);
+
+	/**
+	 * 
+	 * @param firstName
+	 * @return
+	 */
+	Mono<List<UserRepresentation>> findUserByFirstName(final String firstName);
+
+	/**
+	 * 
+	 * @param lastName
+	 * @return
+	 */
+	Mono<List<UserRepresentation>> findUserByLastName(final String lastName);
 
 	/**
 	 * 
@@ -59,7 +75,7 @@ public interface KeycloakOauthClientService {
 	 * @param userRepresentation
 	 * @return
 	 */
-	Mono<String> saveNewPassword(PasswordUpdateRequest passwdUpd, UserRepresentation userRepresentation);
+	Mono<String> saveNewPassword(@Valid PasswordUpdateRequest passwdUpd, UserRepresentation userRepresentation);
 
 	/**
 	 * Create a new User
@@ -68,7 +84,7 @@ public interface KeycloakOauthClientService {
 	 * @param roleList
 	 * @return
 	 */
-	Mono<String> createOauthUser(UserRepresentation newUser, String password, SocialLink socialLink);
+	Mono<String> createOauthUser(UserRepresentation newUser, @NotBlank String password, @NotNull SocialLink socialLink);
 
 	/**
 	 * Create a new User
@@ -77,7 +93,7 @@ public interface KeycloakOauthClientService {
 	 * @param roleList
 	 * @return
 	 */
-	Mono<String> updateUserMfa(String username, boolean enable2fa);
+	Mono<String> updateUserMfa(@NotBlank String username, boolean enable2fa);
 
 	/**
 	 * 
@@ -90,14 +106,14 @@ public interface KeycloakOauthClientService {
 	 * 
 	 * @param username
 	 */
-	Mono<String> assignClientRole(String id, String clientId, String roleName);
+	Mono<String> assignUserClientRole(@NotBlank String userId, @NotBlank String clientId, @NotBlank String roleName);
 
 	/**
 	 * 
 	 * @param username
 	 * @return
 	 */
-	Mono<String> assignRealmRole(String id, String roleName);
+	Mono<String> assignUserRealmRole(@NotBlank String userId, @NotBlank String roleName);
 
 	/**
 	 * 
@@ -105,28 +121,28 @@ public interface KeycloakOauthClientService {
 	 * @param groupId
 	 * @return
 	 */
-	Mono<String> assignUserToGroup(String id, String groupId);
+	Mono<String> assignUserToGroup(@NotBlank String userId, @NotBlank String groupId);
 
 	/**
 	 * 
 	 * @param status
 	 */
-	Mono<Void> logout(String userId, String refreshToken);
-	
+	Mono<Void> logout(@NotBlank String userId, @NotBlank String refreshToken);
+
 	/**
 	 * 
 	 * @param username
 	 * @param refreshToken
 	 * @return
 	 */
-	Mono<Void> signout(String username, String refreshToken);
+	Mono<Void> signout(@NotBlank String username, @NotBlank String refreshToken);
 
 	/**
 	 * Update User details
 	 * 
 	 * @return
 	 */
-	Mono<UserVO> updateOauthUserById(UserDetailsUpdateRequest userDetails, String userId);
+	Mono<UserVO> updateOauthUserById(@Valid UserDetailsUpdateRequest userDetails, @NotBlank String userId);
 
 	/**
 	 * 
@@ -134,20 +150,20 @@ public interface KeycloakOauthClientService {
 	 * @param email
 	 * @return
 	 */
-	Mono<UserVO> updateOauthUser(UserDetailsUpdateRequest userDetails, String username);
+	Mono<UserVO> updateOauthUser(@Valid UserDetailsUpdateRequest userDetails, @NotBlank String username);
 
 	/**
 	 * 
 	 * @param status
 	 * @return
 	 */
-	Mono<String> updateEmailStatus(String username, boolean setVerified);
+	Mono<String> updateEmailStatus(@NotBlank String username, boolean setVerified);
 
 	/**
 	 * @return
 	 * 
 	 */
-	Mono<String> resetPassword(String username, String newPassword);
+	Mono<String> resetPassword(@NotBlank String username, @NotBlank String newPassword);
 
 	/**
 	 * 
@@ -155,20 +171,20 @@ public interface KeycloakOauthClientService {
 	 * @param status
 	 * @return
 	 */
-	Mono<String> updateUserStatus(String username, StatusUpdateRequest statusRequest);
+	Mono<String> updateUserStatus(@NotBlank String username, @Valid StatusUpdateRequest statusRequest);
 
 	/*
 	 * 
 	 * 
 	 */
-	Mono<String> updateUserByIdStatus(String userId, StatusUpdateRequest statusRequest);
+	Mono<String> updateUserByIdStatus(@NotBlank String userId, @Valid StatusUpdateRequest statusRequest);
 
 	/**
 	 * 
 	 * @param username
 	 * @return
 	 */
-	Mono<List<UserRepresentation>> findAllUsers(PagingModel pageModel);
+	Mono<List<UserRepresentation>> findAllUsers(@NotNull PagingModel pageModel);
 
 	/**
 	 * 
@@ -176,7 +192,7 @@ public interface KeycloakOauthClientService {
 	 * @param searchFields
 	 * @return
 	 */
-	Mono<List<UserRepresentation>> search(PagingModel pageModel, SearchUserRequest searchFields);
+	Mono<List<UserRepresentation>> search(@NotNull PagingModel pageModel, @Valid SearchUserRequest searchFields);
 
 	/**
 	 * 
@@ -189,28 +205,28 @@ public interface KeycloakOauthClientService {
 	 * 
 	 * @return
 	 */
-	Mono<String> doMfaValidation(AuthenticationResponse authResponse, String totpCode);
+	Mono<String> doMfaValidation(@Valid AuthenticationResponse authResponse, @NotBlank String totpCode);
 
 	/**
 	 * 
 	 * @param username
 	 * @return
 	 */
-	Mono<UserRepresentation> findUserById(String id);
+	Mono<UserRepresentation> findUserById(@NotBlank String id);
 
 	/**
 	 * 
 	 * @param email
 	 * @return
 	 */
-	Mono<List<UserRepresentation>> findUserByEmail(String email, PagingModel pageModel);
+	Mono<List<UserRepresentation>> findUserByEmail(@NotBlank String email, @NotNull PagingModel pageModel);
 
 	/**
 	 * 
 	 * @param email
 	 * @return
 	 */
-	Mono<UserRepresentation> findUserByEmail(String email);
+	Mono<UserRepresentation> findUserByEmail(@NotBlank String email);
 
 	/**
 	 * 
@@ -218,21 +234,70 @@ public interface KeycloakOauthClientService {
 	 * @param pageModel
 	 * @return
 	 */
-	Mono<List<UserRepresentation>> findUsersWithVerifiedEmails(boolean emailVerified, PagingModel pageModel);
+	Mono<List<UserRepresentation>> findUsersWithVerifiedEmails(boolean emailVerified, @NotNull PagingModel pageModel);
 
 	/**
 	 * 
 	 * @param userDetails
 	 * @return
 	 */
-	Mono<String> enableOauthUser(ProfileActivationUpdateRequest profileStatus);
+	Mono<String> enableOauthUser(@Valid ProfileActivationUpdateRequest profileStatus);
 
 	/**
 	 * 
 	 * @param userId
 	 * @return
 	 */
-	Mono<String> deleteAppUser(String userId);  
+	Mono<String> deleteAppUser(String userId);
+
+	/**
+	 * 
+	 * @param status
+	 */
+	Mono<AuthenticationResponse> refreshToken(String username, String refreshToken);
+
+	/**
+	 * 
+	 * @param status
+	 */
+	Mono<UserInfo> userInfo(String accessToken);
+
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception 
+	 */
+	Mono<List<String>> getUserRealmRoles(@NotBlank String accessToken);
+
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	Mono<Boolean> validateToken(@NotBlank String accessToken);
+
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	Mono<Map<String, List<String>>> getUserClientRoles(@NotBlank String accessToken);
+
+	/**
+	 * 
+	 * @param status
+	 */
+	Mono<String> revokeAccessToken(@NotBlank String accessToken);
+
+	/**
+	 * 
+	 * @param user
+	 * @return
+	 */
+	Mono<String> expireUserPassword(UserRepresentation userRepresentation);     
 
 	/**
 	 * 

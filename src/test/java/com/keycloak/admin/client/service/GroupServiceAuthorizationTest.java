@@ -155,8 +155,7 @@ class GroupServiceAuthorizationTest {
 		when(groupResource.toRepresentation()).thenReturn(null);
 
 		StepVerifier.create(groupService.findRealmGroupById(groupId.toString()))
-				.verifyError(ResourceNotFoundException.class);
-		
+				.verifyError(ResourceNotFoundException.class);		
 	}
 
 	/**

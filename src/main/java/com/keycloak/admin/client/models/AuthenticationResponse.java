@@ -43,6 +43,10 @@ public class AuthenticationResponse implements Serializable {
 	@JsonProperty("secret")
 	@Schema(name = "Secret key", description = "Access token secret key")
 	private String secret;
+	
+	@JsonProperty("scope")
+	@Schema(name = "Token scope", description = "Access token scope")
+	private String scope;
 
 	@JsonProperty("access_token")
 	@Schema(name = "Access token", description = "login password")
@@ -67,28 +71,29 @@ public class AuthenticationResponse implements Serializable {
 
 	public AuthenticationResponse() {
 
-		this(null, null, null, null, null, null, null, null);
+		this(null, null, null, null, null, null, null, null, null);
 	}
 
 	public AuthenticationResponse(String username, List<String> roles, String accessToken, String refreshToken) {
 
-		this(username, roles, accessToken, refreshToken, null, null, null, null);
+		this(username, roles, accessToken, refreshToken, null, null, null, null, null);
 	}
 
 	public AuthenticationResponse(String username, String totpSessionId) {
 
-		this(username, null, null, null, null, null, null, totpSessionId);
+		this(username, null, null, null, null, null, null, null, totpSessionId);
 	}
 
 	@Builder
 	//@JsonCreator
 	public AuthenticationResponse(String username, List<String> roles, String accessToken, String refreshToken,
-			Long expiresIn, Long refreshExpiresIn, String secret, String otpCode) {
+			Long expiresIn, Long refreshExpiresIn, String secret, String scope, String otpCode) {
 
 		this.roles = roles;
 		this.otpCode = otpCode;
 		this.expiresIn = expiresIn;
 		this.refreshExpiresIn = refreshExpiresIn;
+		this.scope = scope;
 		this.secret = secret;
 		this.username = username;
 		this.accessToken = accessToken;
@@ -99,7 +104,7 @@ public class AuthenticationResponse implements Serializable {
 
 		return new AuthenticationResponse(authResponse.getUsername(), authResponse.getRoles(),
 				authResponse.getAccessToken(), authResponse.getRefreshToken(), authResponse.getExpiresIn(),
-				authResponse.getRefreshExpiresIn(), authResponse.getSecret(), otpCode);
+				authResponse.getRefreshExpiresIn(), authResponse.getSecret(), authResponse.getScope(), otpCode);
 	}
 
 }

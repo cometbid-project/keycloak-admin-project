@@ -60,6 +60,7 @@ import com.keycloak.admin.client.models.PasswordResetTokenResponse;
 import com.keycloak.admin.client.models.PasswordUpdateRequest;
 import com.keycloak.admin.client.models.ResetPasswordFinalRequest;
 import com.keycloak.admin.client.models.ResetPasswordRequest;
+import com.keycloak.admin.client.oauth.service.it.KeycloakOauthClientService;
 import com.keycloak.admin.client.oauth.service.it.PasswordMgtService;
 import com.keycloak.admin.client.oauth.service.it.UserLocationService;
 import com.keycloak.admin.client.repository.PasswordResetTokenRepository;
@@ -85,13 +86,13 @@ import ua_parser.Parser;
 @PreAuthorize("isAnonymous() or isAuthenticated()")
 public class PasswordServiceImpl implements PasswordMgtService {
 
-	//private final Parser parser;
+	// private final Parser parser;
 	private final AuthProfile dataStore;
 	private final UserLocationService userLocationService;
 	private final PasswordResetTokenRepository passwordTokenRepository;
 	private final CustomMessageSourceAccessor i8nMessageAccessor;
-	//private final DatabaseReader databaseReader;
-	private final KeycloakOauthClient keycloakClient;
+	// private final DatabaseReader databaseReader;
+	private final KeycloakOauthClientService keycloakClient;
 	private final GatewayRedisCache redisCache;
 	private final ApplicationEventPublisher eventPublisher;
 	private final ReactiveMongoTemplate mongoTemplate;
@@ -109,17 +110,18 @@ public class PasswordServiceImpl implements PasswordMgtService {
 	 * @param dataStore
 	 */
 	public PasswordServiceImpl(ApplicationEventPublisher eventPublisher, UserLocationService userLocationService,
-			GatewayRedisCache redisCache, //@Qualifier("GeoIPCity") DatabaseReader databaseReader,
-			PasswordResetTokenRepository passwordTokenRepository, KeycloakOauthClient keycloakClient,
-			CustomMessageSourceAccessor i8nMessageAccessor, AuthProfile dataStore, //Parser parser,
+			GatewayRedisCache redisCache, // @Qualifier("GeoIPCity") DatabaseReader databaseReader,
+			PasswordResetTokenRepository passwordTokenRepository,
+			@Qualifier("keycloak-client") KeycloakOauthClientService keycloakClient,
+			CustomMessageSourceAccessor i8nMessageAccessor, AuthProfile dataStore, // Parser parser,
 			ReactiveMongoTemplate mongoTemplate) {
 
-		//this.parser = parser;
+		// this.parser = parser;
 		this.dataStore = dataStore;
 		this.userLocationService = userLocationService;
 		this.passwordTokenRepository = passwordTokenRepository;
 		this.i8nMessageAccessor = i8nMessageAccessor;
-		//this.databaseReader = databaseReader;
+		// this.databaseReader = databaseReader;
 		this.keycloakClient = keycloakClient;
 		this.redisCache = redisCache;
 		this.eventPublisher = eventPublisher;

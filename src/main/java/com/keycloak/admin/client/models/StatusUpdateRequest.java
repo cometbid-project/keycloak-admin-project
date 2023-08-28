@@ -9,8 +9,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-//import com.cometbid.oauth2.demo.enums.StatusType;
-//import com.cometbid.oauth2.demo.validators.qualifiers.VerifyValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.keycloak.admin.client.common.enums.StatusType;
 import com.keycloak.admin.client.validators.qualifiers.VerifyValue;

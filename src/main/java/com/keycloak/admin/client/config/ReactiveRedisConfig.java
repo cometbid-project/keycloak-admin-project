@@ -29,6 +29,7 @@ public class ReactiveRedisConfig {
 	@Autowired
 	ReactiveRedisConnectionFactory reactiveRedisConnectionFactory;
 
+	/*
 	@Bean
 	public ReactiveRedisOperations<String, Object> reactiveRedisOperations() {
 
@@ -40,6 +41,7 @@ public class ReactiveRedisConfig {
 				.hashKey(serializer).build();
 		return new ReactiveRedisTemplate<>(reactiveRedisConnectionFactory, context);
 	}
+	*/
 	
 	@Bean
 	public ReactiveRedisOperations<String, String> reactiveStringRedisTemplate(
@@ -54,20 +56,21 @@ public class ReactiveRedisConfig {
 		return new ReactiveRedisTemplate<>(connectionFactory, serializationContext);
 	}
 
-	/*
+	
 	@Bean
 	public ReactiveRedisTemplate<String, Object> reactiveJsonObjectRedisTemplate(
 			ReactiveRedisConnectionFactory connectionFactory) {
 
 		RedisSerializationContextBuilder<String, Object> builder = RedisSerializationContext
-				.newSerializationContext(new StringRedisSerializer());
+				.newSerializationContext(new StringRedisSerializer());				
 
-		var serializationContext = builder.value(new GenericJackson2JsonRedisSerializer("_type")).build();
+		var serializationContext = builder.value(new GenericJackson2JsonRedisSerializer("_type"))
+										.key(new StringRedisSerializer()).build();
 
 		return new ReactiveRedisTemplate<>(connectionFactory, serializationContext);
 	}
 
-	
+	/*
 	@Bean
 	public ReactiveKeyCommands keyCommands(final ReactiveRedisConnectionFactory reactiveRedisConnectionFactory) {
 		return reactiveRedisConnectionFactory.getReactiveConnection().keyCommands();

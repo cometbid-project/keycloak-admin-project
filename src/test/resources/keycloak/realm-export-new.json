@@ -606,9 +606,6 @@
 			"value": "secret"
 		 }
 	   ],
-	  "realmRoles": [
-        "ROLE_ADMIN"
-      ],
 	  "clientRoles": {
 		 "account": [
 			"view-profile",
@@ -632,9 +629,6 @@
 			"value": "secret"
 		 }
 	   ],
-	  "realmRoles": [
-        "ROLE_USER"
-      ],
 	  "clientRoles": {
 		 "account": [
 			"view-profile",
@@ -883,7 +877,6 @@
       "defaultClientScopes": [
         "web-origins",
         "acr",
-        "openid",
         "profile",
         "roles",
         "email"
@@ -1821,18 +1814,6 @@
       ]
     },
     {
-      "id": "913e2286-a5b0-4f4d-af29-57663263624b",
-      "name": "openid",
-      "description": "",
-      "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "gui.order": "",
-        "consent.screen.text": ""
-      }
-    },
-    {
       "id": "d8582f5b-fc57-4cc2-a1f3-11983185fc7a",
       "name": "offline_access",
       "description": "OpenID Connect built-in scope: offline_access",
@@ -1921,8 +1902,7 @@
     "email",
     "roles",
     "web-origins",
-    "acr",
-    "openid"
+    "acr"
   ],
   "defaultOptionalClientScopes": [
     "offline_access",

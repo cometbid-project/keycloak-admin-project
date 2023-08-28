@@ -55,30 +55,28 @@ public class WebClientConfig {
 	private final KeycloakClientSslProperties keycloakSslProps;
 
 	private final AuthProperties serverProperties;
-
-	@Value("${keycloak.auth.baseUrl:}")
-	private String authServerUrl;
-
-	private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel MacOS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36";
-
-	@Bean("keycloakClient")
+	
+	@Bean("keycloak-webClient")
 	public WebClient keycloackWebClient(WebClient.Builder webClientBuilder) throws SSLException {
-		String BASE_URL = this.authServerUrl;
+		//String BASE_URL = serverProperties.getBaseUrl();
+		//log.info("Keycloak Container Base Url {}", BASE_URL);
 
-		DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(BASE_URL);
-		uriBuilderFactory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.URI_COMPONENT);
+		//DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory(BASE_URL);
+		//uriBuilderFactory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.URI_COMPONENT);
+		
+		Integer codecMemorySize = serverProperties.getCodecInMemorySize();
 
 		webClientBuilder.filter(LogFilters.logRequest());
 		webClientBuilder.filter(LogFilters.logResponse());
 		webClientBuilder.filter(WebClientFilters.tracingFilter());
 
-		webClientBuilder.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-		webClientBuilder.defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT);
+		webClientBuilder.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE);
+		//webClientBuilder.defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT);
 
 		webClientBuilder.exchangeStrategies(ExchangeStrategies.builder()
-				.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(30 * 1024 * 1024)).build());
+				.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(codecMemorySize)).build());
 
-		return webClientBuilder.clone().uriBuilderFactory(uriBuilderFactory).baseUrl(BASE_URL)
+		return webClientBuilder//.uriBuilderFactory(uriBuilderFactory).baseUrl(BASE_URL)
 				.clientConnector(getConnector()).build();
 	}
 
@@ -88,31 +86,37 @@ public class WebClientConfig {
 
 		return new ReactorClientHttpConnector(httpClient);
 	}
-
+	
 	private ReactorClientHttpConnector getConnector() throws SSLException {
 
-		final ConnectionProvider theTcpClientPool = ConnectionProvider.create("tcp-client-pool"); // default pool size
-		// 500
+		Integer connectTimeoutInMillis = serverProperties.getConnectTimeoutInMillis();
+		Integer readTimeoutInMillis = serverProperties.getRequestTimeoutInMillis();
+		Integer writeTimeoutInMillis = serverProperties.getWriteTimeoutInMillis();
+		
+		Integer handshakeTimeout = serverProperties.getHandshakeTimeout();
+		Integer notifyReadTimeout = serverProperties.getNotifyReadTimeout();
+		Integer notifyFlushTimeout = serverProperties.getNotifyFlushTimeout();
+		
+		Integer responseTimeout = serverProperties.getResponseTimeout();
+		
+		final ConnectionProvider theTcpClientPool = ConnectionProvider.create("tcp-client-pool"); 
 		final LoopResources theTcpClientLoopResources = LoopResources.create("tcp-client-loop", 100, true);
 
 		HttpClient httpClient = HttpClient.create(theTcpClientPool).compress(true)
 				.secure(sslContextSpec -> sslContextSpec.sslContext(noSecureSSL())
-						.handshakeTimeout(Duration.ofSeconds(30)).closeNotifyFlushTimeout(Duration.ofSeconds(10))
-						.closeNotifyReadTimeout(Duration.ofSeconds(10)))
+						.handshakeTimeout(Duration.ofSeconds(handshakeTimeout))
+						.closeNotifyFlushTimeout(Duration.ofSeconds(notifyReadTimeout))
+						.closeNotifyReadTimeout(Duration.ofSeconds(notifyFlushTimeout)))
 				// configure a response timeout
-				.responseTimeout(Duration.ofSeconds(1))
-				// .proxy(spec ->
-				// spec.type(ProxyProvider.Proxy.HTTP).host("proxy").port(8080).connectTimeoutMillis(30000))
-				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverProperties.getConnectTimeoutInMillis())
-				.option(ChannelOption.SO_TIMEOUT, serverProperties.getRequestTimeoutInMillis()) // Socket Timeout
-				.option(ChannelOption.SO_KEEPALIVE, true).option(EpollChannelOption.TCP_KEEPIDLE, 300)
-				.option(EpollChannelOption.TCP_KEEPINTVL, 60).option(EpollChannelOption.TCP_KEEPCNT, 8)
+				.responseTimeout(Duration.ofSeconds(responseTimeout))
+				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutInMillis)
+				.option(ChannelOption.SO_KEEPALIVE, true)
 				.runOn(theTcpClientLoopResources).doOnConnected(connection -> {
 					// set the read and write timeouts
 					connection.addHandlerLast(
-							new ReadTimeoutHandler(serverProperties.getReadTimeoutInMillis(), TimeUnit.MILLISECONDS));
+							new ReadTimeoutHandler(readTimeoutInMillis, TimeUnit.MILLISECONDS));
 					connection.addHandlerLast(
-							new WriteTimeoutHandler(serverProperties.getWriteTimeoutInMillis(), TimeUnit.MILLISECONDS));
+							new WriteTimeoutHandler(writeTimeoutInMillis, TimeUnit.MILLISECONDS));
 				});
 
 		// ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);

@@ -5,12 +5,17 @@ package com.keycloak.admin.client.oauth.service;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.OAuth2Constants;
@@ -19,9 +24,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import static com.keycloak.admin.client.config.AuthProperties.*;
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import static com.keycloak.admin.client.error.helpers.ErrorPublisher.*;
 import static com.keycloak.admin.client.error.handlers.ExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -46,6 +48,7 @@ import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
 import com.keycloak.admin.client.models.UserVO;
 import com.keycloak.admin.client.models.mappers.UserMapper;
 import com.keycloak.admin.client.oauth.service.it.KeycloakOauthClientService;
+import com.keycloak.admin.client.token.utils.KeycloakJwtTokenUtil;
 import com.keycloak.admin.client.token.utils.TotpManager;
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Flux;
@@ -55,10 +58,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotBlank;
 import javax.ws.rs.core.Response;
 
 /**
@@ -99,17 +108,17 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		// Get realm role "tester" (requires view-realm role)
 		final String appRealm = this.authProperties.getAppRealm();
 
-		keycloak.tokenManager().getAccessToken();
+		// keycloak.tokenManager().getAccessToken();
 		return keycloak.realm(appRealm);
 	}
 
 	private UserRepresentation getUserRepresentation(String username) {
-		return getUserResource(username).toRepresentation();
+		UserResource userResource = getUserResource(username);
+
+		return Objects.isNull(userResource) ? null : userResource.toRepresentation();
 	}
 
 	private UserResource getUserResource(String username) {
-		// String appRealm = authProperties.getAppRealm();
-
 		boolean exact = true;
 		List<UserRepresentation> userRepresentationList = this.realmResource().users().search(username, exact);
 
@@ -123,15 +132,22 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	}
 
 	private UserResource getUserResourceById(String id) {
-		// String appRealm = authProperties.getAppRealm();
 
 		return this.realmResource().users().get(id);
 	}
 
 	private RoleRepresentation getRealmRoleRepresentation(String roleName) {
 		// Get realm role "tester" (requires view-realm role)
-		return realmResource().roles()//
+		return realmResource().roles()
+				//
 				.get(roleName).toRepresentation();
+	}
+
+	private GroupRepresentation getGroupRepresentation(String groupId) {
+		// Get realm role "tester" (requires view-realm role)
+		return realmResource().groups()
+				//
+				.group(groupId).toRepresentation();
 	}
 
 	private RoleRepresentation getClientRoleRepresentation(ClientRepresentation app1Client, String roleName) {
@@ -164,14 +180,18 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> generateToken(@NotBlank final String username, @NotBlank final String targetClientId) {
+	public Mono<AuthenticationResponse> generateToken(final String username, final String targetClientId) {
 
 		String startingClientId = authProperties.getAdminClientId();
 		String startingClientSecret = authProperties.getAdminClientSecret();
 
-		return this.getAdminClientToken()
-				.flatMap(authToken -> keycloakService.doTokenExchange(authToken.getAccessToken(), startingClientId,
-						startingClientSecret, username, targetClientId));
+		log.info("Admin Client id {}", startingClientId);
+		log.info("Admin Client Secret {}", startingClientSecret);
+
+		return this.getAdminClientToken(username).flatMap(accessToken -> keycloakService
+				.doTokenExchange(accessToken, startingClientId, startingClientSecret, username, targetClientId)
+				.map(tokenGen -> KeycloakJwtTokenUtil.generateLoginResponse(tokenGen, new ArrayList<>(), username)));
+
 	}
 
 	/**
@@ -179,24 +199,10 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param authRequest
 	 * @return
 	 */
-	private Mono<AuthenticationResponse> getAdminClientToken() {
-		String appRealm = authProperties.getAppRealm();
-		String baseUrl = authProperties.getBaseUrl();
-		String clientId = authProperties.getAdminClientId();
-		String clientSecret = authProperties.getAdminClientSecret();
+	private Mono<String> getAdminClientToken(String username) {
 
-		String username = authProperties.getAdminUsername();
-		String password = authProperties.getAdminPassword();
-
-		List<String> roles = Collections.emptyList();
-
-		Keycloak localKeycloak = KeycloakBuilder.builder().grantType(OAuth2Constants.PASSWORD).serverUrl(baseUrl)
-				.realm(appRealm).username(username).password(password).clientId(clientId).clientSecret(clientSecret)
-				.build();
-
-		return Mono.fromCallable(() -> localKeycloak.tokenManager().getAccessTokenString())
-				.switchIfEmpty(raiseBadCredentials("invalid.credentials", new Object[] {}))
-				.map(accessCode -> KeycloakJwtTokenUtil.generateLoginResponse(accessCode, roles, username));
+		return Mono.fromCallable(() -> this.keycloak.tokenManager().getAccessTokenString())
+				.switchIfEmpty(raiseBadCredentials("invalid.credentials", new Object[] {}));
 	}
 
 	/**
@@ -205,9 +211,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<List<UserRepresentation>> search(@NotNull final PagingModel pageModel,
-			@Valid final SearchUserRequest searchFields) {
-		// String appRealm = authProperties.getAppRealm();
+	public Mono<List<UserRepresentation>> search(final PagingModel pageModel, final SearchUserRequest searchFields) {
 
 		int pageNo = pageModel.getPageNo();
 		int pageSize = pageModel.getPageSize();
@@ -222,9 +226,12 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		String email = searchFields.getEmail();
 		boolean emailVerified = searchFields.isEmailVerified();
 
+		// Mono<List<UserRepresentation>> emptyUserList = Mono.just(new ArrayList<>());
 		// Create the user resource
-		return Mono.fromCallable(() -> this.realmResource().users().search(username, firstName, lastName, email,
-				emailVerified, firstResult, pageSize, userEnabled, briefRepresentation));
+		return Mono
+				.fromCallable(() -> this.realmResource().users().search(username, firstName, lastName, email,
+						emailVerified, firstResult, pageSize, userEnabled, briefRepresentation))
+				.switchIfEmpty(Mono.just(new ArrayList<>()));
 	}
 
 	/**
@@ -234,7 +241,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public Mono<List<UserRepresentation>> findUsersWithVerifiedEmails(boolean emailVerified,
-			@NotNull final PagingModel pageModel) {
+			final PagingModel pageModel) {
 		// String appRealm = authProperties.getAppRealm();
 
 		int pageNo = pageModel.getPageNo();
@@ -255,7 +262,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<List<UserRepresentation>> findAllUsers(@NotNull final PagingModel pageModel) {
+	public Mono<List<UserRepresentation>> findAllUsers(final PagingModel pageModel) {
 		// String appRealm = authProperties.getAppRealm();
 
 		int pageNo = pageModel.getPageNo();
@@ -272,28 +279,22 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public Flux<UserRepresentation> findAllUsers() {
-		// String appRealm = authProperties.getAppRealm();
 
 		return Mono.fromCallable(() -> this.realmResource().users().list()).flatMapMany(Flux::fromIterable);
 	}
 
 	/**
 	 * 
-	 * @param username
+	 * @param id
 	 * @return
 	 */
 	@Override
-	public Mono<UserRepresentation> findUserById(@NotBlank final String id) {
+	public Mono<UserRepresentation> findUserById(final String id) {
 
-		Mono<UserResource> userResource = Mono.fromCallable(() -> getUserResourceById(id));
-
-		return userResource.map(user -> {
-
-			UserRepresentation userRepresentation = user.toRepresentation();
+		return Mono.fromCallable(() -> getUserResourceById(id)).flatMap(userResource -> {
+			UserRepresentation user = userResource.toRepresentation();
 			// Do Profile checks on status
-			doProfileValidation(userRepresentation);
-
-			return userRepresentation;
+			return doProfileValidation(user).thenReturn(user);
 		});
 	}
 
@@ -303,18 +304,68 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<UserRepresentation> findUserByUsername(@NotBlank final String username) {
+	public Mono<UserRepresentation> findUserByUsername(final String username) {
 
-		// Create the user resource
-		Mono<UserResource> userResource = Mono.fromCallable(() -> getUserResource(username));
-
-		return userResource.map(user -> {
-
-			UserRepresentation userRepresentation = user.toRepresentation();
+		return Mono.fromCallable(() -> getUserResource(username)).flatMap(userResource -> {
+			UserRepresentation user = userResource.toRepresentation();
 			// Do Profile checks on status
-			doProfileValidation(userRepresentation);
+			return doProfileValidation(user).thenReturn(user);
+		}).switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
+	}
 
-			return userRepresentation;
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Mono<List<String>> getUserRealmRoles(@NotBlank final String accessToken) {
+
+		Mono<UserInfo> userInfoResponse = keycloakService.getUserInfo(accessToken);
+
+		return userInfoResponse.flatMap(userInfo -> findUserById(userInfo.getSubject())).map(p -> {
+			log.info("UserRep username: {}", p.getUsername());
+			log.info("UserRep roles: {}", p.getRealmRoles());
+
+			List<String> roles = p.getRealmRoles() == null ? new ArrayList<>() : p.getRealmRoles();
+			return roles;
+		});// .flatMapMany(Flux::fromIterable);
+	}
+
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Mono<Boolean> validateToken(@NotBlank final String accessToken) {
+
+		return keycloakService.checkValidity(accessToken);
+	}
+
+	/**
+	 * 
+	 * @param token
+	 * @return
+	 * @throws Exception
+	 */
+
+	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Mono<Map<String, List<String>>> getUserClientRoles(@NotBlank final String accessToken) {
+
+		Mono<UserInfo> userInfoResponse = keycloakService.getUserInfo(accessToken);
+
+		return userInfoResponse.flatMap(userInfo -> findUserById(userInfo.getSubject())).map(p -> {
+			log.info("UserRep username: {}", p.getUsername());
+			log.info("UserRep roles: {}", p.getClientRoles());
+
+			Map<String, List<String>> roles = p.getClientRoles() == null ? new HashMap<>() : p.getClientRoles();
+			return roles;
 		});
 	}
 
@@ -324,9 +375,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<List<UserRepresentation>> findUserByEmail(@NotBlank final String email,
-			@NotNull final PagingModel pageModel) {
-		// String appRealm = authProperties.getAppRealm();
+	public Mono<List<UserRepresentation>> findUserByEmail(final String email, final PagingModel pageModel) {
 
 		int firstResult = pageModel.getPageNo();
 		int maxResult = pageModel.getPageSize();
@@ -343,7 +392,46 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	@Override
 	public Mono<UserRepresentation> findUserByEmail(String email) {
 		// Create the user resource
-		return findUserByUsername(email);
+
+		return Mono.fromCallable(() -> {
+			boolean exact = true;
+			List<UserRepresentation> userRepresentationList = this.realmResource().users().searchByEmail(email, exact);
+
+			if (!userRepresentationList.isEmpty()) {
+				return userRepresentationList.get(0);
+			}
+			return null;
+		});
+	}
+
+	/**
+	 * 
+	 * @param email
+	 * @return
+	 */
+	@Override
+	public Mono<List<UserRepresentation>> findUserByFirstName(final String firstName) {
+
+		// Create the user resource
+		return Mono.fromCallable(() -> {
+			boolean exact = true;
+			return this.realmResource().users().searchByFirstName(firstName, exact);
+		});
+	}
+
+	/**
+	 * 
+	 * @param email
+	 * @return
+	 */
+	@Override
+	public Mono<List<UserRepresentation>> findUserByLastName(final String lastName) {
+
+		// Create the user resource
+		return Mono.fromCallable(() -> {
+			boolean exact = true;
+			return this.realmResource().users().searchByLastName(lastName, exact);
+		});
 	}
 
 	/**
@@ -353,41 +441,40 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> saveNewPassword(@Valid final PasswordUpdateRequest passwdUpd,
+	public Mono<String> saveNewPassword(final PasswordUpdateRequest passwdUpd,
 			final UserRepresentation userRepresentation) {
 		// Checking Old Password matches current User password
 		List<CredentialRepresentation> credentialList = userRepresentation.getCredentials();
 		CredentialRepresentation currentCredential = credentialList.get(0);
 
 		String hashedPassword = currentCredential.getValue();
-
 		if (!isPasswordEqual(passwdUpd.getOldPassword(), hashedPassword)) {
-			raisePasswordUnacceptableException("user.password.notMatchCurrent", new Object[] {});
+			return raisePasswordUnacceptableException("user.password.notMatchCurrent", new Object[] {});
 		}
 
 		String newPlainTextPassword = passwdUpd.getNewPassword();
 		if (isPasswordUsedBefore(userRepresentation, newPlainTextPassword)) {
-			raisePasswordUnacceptableException("user.password.matchPrevious", new Object[] {});
+			return raisePasswordUnacceptableException("user.password.matchPrevious", new Object[] {});
 		}
 
 		addNewPasswordToHistory(userRepresentation, newPlainTextPassword);
 
-		// Assumption: successful change of password make Expired Accounts change to
+		// Assumption: Successful change of password make Expired Accounts change to
 		// Valid State
 		// PreCondition is now met
 		userRepresentation.singleAttribute(PROFILE_EXPIRED, Boolean.FALSE.toString());
 
-		String username = userRepresentation.getUsername();
-
-		return Mono.fromRunnable(() -> {
+		return Mono.fromCallable(() -> {
+			String username = userRepresentation.getUsername();
 			UserResource userResource = getUserResource(username);
 
 			if (userResource == null) {
-				raiseResourceNotFoundError("user.notFound", new Object[] { username });
+				return raiseResourceNotFoundError("user.notFound", new Object[] { username });
 			}
+
 			userResource.update(userRepresentation);
-		}).thenReturn("User password was changed successful");
-		// .onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("password.update.error")));
+			return "done";
+		}).thenReturn(i8nMessageAccessor.getLocalizedMessage("change.password.message"));
 	}
 
 	private boolean isPasswordEqual(String plainTextPassword, String currentPassword) {
@@ -401,8 +488,12 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 		Set<String> pastUsedPasswords = user.getDisableableCredentialTypes();
 
-		return pastUsedPasswords.stream()
-				.anyMatch(hashedPassword -> isPasswordEqual(newPlainTextPassword, hashedPassword));
+		if (pastUsedPasswords != null) {
+			return pastUsedPasswords.stream()
+					.anyMatch(hashedPassword -> isPasswordEqual(newPlainTextPassword, hashedPassword));
+		}
+
+		return false;
 	}
 
 	private void addNewPasswordToHistory(UserRepresentation userRepresentation, String newPlainPassword) {
@@ -418,6 +509,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		log.info("Password history {}", passwdHistory);
 
 		String encodedPassword = passwordEncoder.encode(newPlainPassword);
+		log.info("Encoded password {}", encodedPassword);
 
 		if (passwdHistory.size() >= maxAllowedPasswordHistory) {
 			CircularFifoQueue<String> fifoQueue = new CircularFifoQueue<>(maxAllowedPasswordHistory);
@@ -431,7 +523,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		}
 
 		Set<String> newCredentialsList = passwdHistory.stream().collect(Collectors.toSet());
-
 		userRepresentation.setDisableableCredentialTypes(newCredentialsList);
 	}
 
@@ -442,9 +533,9 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<AuthenticationResponse> passwordGrantLogin(@Valid final AuthenticationRequest authRequest) {
+	public Mono<AuthenticationResponse> passwordGrantLogin(final AuthenticationRequest authRequest) {
 
-		Mono<String> monoAccessCode = login(authRequest)
+		Mono<AccessTokenResponse> monoAccessCode = login(authRequest)
 				.switchIfEmpty(raiseBadCredentials("invalid.credentials", new Object[] {}));
 
 		return monoAccessCode.flatMap(accessCode -> {
@@ -454,18 +545,17 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 			return userRep.flatMap(user -> {
 				// Do Profile checks on status
-				doProfileValidation(user);
-
-				return buildAuthentication(user, accessCode);
+				return doProfileValidation(user).then(buildAuthentication(user, accessCode));
 			});
 		});
 	}
 
-	private Mono<AuthenticationResponse> buildAuthentication(UserRepresentation userRep, String accessCode) {
+	private Mono<AuthenticationResponse> buildAuthentication(UserRepresentation userRep,
+			AccessTokenResponse accessCode) {
 		String username = userRep.getUsername();
+		List<String> roles = userRep.getRealmRoles();
 
 		AuthenticationResponse authResponse = null;
-		List<String> roles = userRep.getRealmRoles();
 
 		if (isTotpEnabled(userRep)) {
 			final String totpSessionId = RandomGenerator.generateSessionId();
@@ -493,16 +583,18 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> createOauthUser(final UserRepresentation newUser, @NotBlank final String password,
-			@NotNull final SocialLink socialLink) {
+	public Mono<String> createOauthUser(final UserRepresentation newUser, final String password,
+			final SocialLink socialLink) {
 
 		CredentialRepresentation credentialRep = preparePasswordRepresentation(password);
 		UserRepresentation userRepresentation = prepareUserRepresentation(newUser, credentialRep, socialLink);
 
-		// String appRealm = authProperties.getAppRealm();
+		return Mono.fromCallable(() -> {
+			Response response = this.realmResource().users().create(userRepresentation);
 
-		return Mono.fromCallable(() -> this.realmResource().users().create(userRepresentation))
-				.map(response -> getCreatedUserId(response));
+			log.info("Response: {} {}", response.getStatus(), response.getStatusInfo());
+			return response;
+		}).map(response -> getCreatedUserId(response));
 	}
 
 	private String enableMFA(UserRepresentation newUser) {
@@ -530,7 +622,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> updateUserMfa(@NotBlank final String username, boolean enable2FA) {
+	public Mono<String> updateUserMfa(final String username, boolean enable2FA) {
 
 		// find the user resource
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResource(username))
@@ -563,8 +655,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> updateUserStatus(
-			@NotBlank final String username, @Valid final StatusUpdateRequest statusRequest) {
+	public Mono<String> updateUserStatus(final String username, final StatusUpdateRequest statusRequest) {
 
 		String status = statusRequest.getStatus();
 
@@ -574,7 +665,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 		return userRep.flatMap(user -> doStatusUpdate(user, status));
 	}
-	
+
 	/**
 	 * 
 	 * @param userId
@@ -582,8 +673,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> updateUserByIdStatus(
-			@NotBlank final String userId, @Valid final StatusUpdateRequest statusRequest) {
+	public Mono<String> updateUserByIdStatus(final String userId, final StatusUpdateRequest statusRequest) {
 
 		String status = statusRequest.getStatus();
 
@@ -625,7 +715,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * 
 	 */
 	@Override
-	public Mono<String> resetPassword(@NotBlank final String username, @NotBlank final String newPassword) {
+	public Mono<String> resetPassword(final String username, final String newPassword) {
 
 		Mono<UserResource> userResource = Mono.fromCallable(() -> getUserResource(username))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
@@ -646,7 +736,8 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		return Mono.fromRunnable(() -> {
 			userResource.resetPassword(credential);
 			userResource.update(userRepresentation);
-		}).thenReturn("User password was reset successful");
+		}).thenReturn(i8nMessageAccessor.getLocalizedMessage("reset.password.success"));
+		// "User password was reset successful"
 	}
 
 	/**
@@ -655,12 +746,12 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> updateEmailStatus(@NotBlank final String username, boolean setVerified) {
+	public Mono<String> updateEmailStatus(final String username, boolean setVerified) {
 
-		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResource(username))
+		Mono<UserResource> userResource = Mono.fromCallable(() -> getUserResource(username))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
 
-		return userRep.flatMap(user -> doEmailStatusUpdate(user, setVerified))
+		return userResource.flatMap(user -> doEmailStatusUpdate(user, setVerified))
 				.thenReturn(i8nMessageAccessor.getLocalizedMessage("auth.message.success"))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("change.emailstatus.error")));
 	}
@@ -671,7 +762,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		userRepresentation.setEmailVerified(setVerified);
 
 		return Mono.fromRunnable(() -> userResource.update(userRepresentation));
-
 	}
 
 	/**
@@ -679,20 +769,51 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param status
 	 */
 	@Override
-	public Mono<Void> signout(@NotBlank final String username, @NotBlank final String refreshToken) {
+	public Mono<AuthenticationResponse> refreshToken(final String username, final String refreshToken) {
+
+		return keycloakService.refreshAccessToken(username, refreshToken);
+	}
+
+	/**
+	 * 
+	 * @param status
+	 */
+	@Override
+	public Mono<String> revokeAccessToken(final String accessToken) {
+
+		return keycloakService.revokeAccessToken(accessToken)
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("message.token-revocation.success"));
+	}
+
+	/**
+	 * 
+	 * @param status
+	 */
+	@Override
+	public Mono<UserInfo> userInfo(final String accessToken) {
+
+		return keycloakService.getUserInfo(accessToken);
+	}
+
+	/**
+	 * 
+	 * @param status
+	 */
+	@Override
+	public Mono<Void> signout(final String username, final String refreshToken) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResource(username))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
 
 		return userRep.flatMap(this::doLogout).and(keycloakService.logout(refreshToken));
 	}
-	
+
 	/**
 	 * 
 	 * @param status
 	 */
 	@Override
-	public Mono<Void> logout(@NotBlank final String userId, @NotBlank final String refreshToken) {
+	public Mono<Void> logout(final String userId, final String refreshToken) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(userId))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { userId }));
@@ -711,13 +832,13 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> assignRealmRole(@NotBlank final String id, @NotBlank final String roleName) {
+	public Mono<String> assignUserRealmRole(final String id, final String roleName) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(id))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { id }));
 
-		return userRep.flatMap(userResource -> assignRole(userResource, roleName))
-				.thenReturn(String.format("User with id: %s has a new role of '%s'", id, roleName));
+		return userRep.flatMap(userResource -> assignRole(userResource, roleName)).thenReturn(i8nMessageAccessor
+				.getLocalizedMessage("message.realmrole.assign.success", new Object[] { id, roleName }));
 	}
 
 	private Mono<String> assignRole(UserResource userResource, String roleName) {
@@ -736,11 +857,21 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param groupId
 	 * @return
 	 */
-	public Mono<String> assignUserToGroup(@NotBlank final String id, @NotBlank final String groupId) {
+	public Mono<String> assignUserToGroup(final String id, final String groupId) {
 
-		return Mono.fromRunnable(() -> getUserResourceById(id).joinGroup(groupId))
-				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { id }))
-				.thenReturn(String.format("User %s has been added to new group '%s'", id, groupId));
+		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(id))
+				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { id }));
+
+		return userRep.flatMap(userResource -> assignGroup(userResource, groupId)).thenReturn(
+				i8nMessageAccessor.getLocalizedMessage("message.group.assign.success", new Object[] { id, groupId }));
+	}
+
+	private Mono<String> assignGroup(UserResource userResource, String groupId) {
+
+		Mono<GroupRepresentation> groupRep = Mono.fromCallable(() -> getGroupRepresentation(groupId))
+				.switchIfEmpty(raiseResourceNotFoundError("group.notFound", new Object[] { groupId }));
+
+		return groupRep.flatMap(newGroup -> Mono.fromRunnable(() -> userResource.joinGroup(groupId)));
 	}
 
 	/**
@@ -748,14 +879,14 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param username
 	 */
 	@Override
-	public Mono<String> assignClientRole(@NotBlank final String id, @NotBlank final String clientId,
-			@NotBlank final String roleName) {
+	public Mono<String> assignUserClientRole(final String id, final String clientId, final String roleName) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(id))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { id }));
 
-		return userRep.flatMap(userResource -> assignClient(userResource, clientId, roleName)).thenReturn(
-				String.format("User with id: %s has a new Client(%s) role of '%s'", id, clientId, roleName));
+		return userRep.flatMap(userResource -> assignClient(userResource, clientId, roleName))
+				.thenReturn(i8nMessageAccessor.getLocalizedMessage("message.clientrole.assign.success",
+						new Object[] { id, clientId, roleName }));
 	}
 
 	private Mono<Void> assignClient(UserResource userResource, String clientId, String roleName) {
@@ -795,10 +926,8 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		newUser.setEnabled(true);
 		newUser.setCredentials(Arrays.asList(credRepresentation));
 
-		List<String> roleNames = user.getRealmRoles().stream().map(roleName -> {
-			RoleRepresentation roleRep = getRealmRoleRepresentation(roleName);
-			return roleRep.getName();
-		}).collect(Collectors.toList());
+		List<String> roleNames = user.getRealmRoles().stream()
+				.map(roleName -> getRealmRoleRepresentation(roleName).getName()).collect(Collectors.toList());
 		newUser.setRealmRoles(roleNames);
 
 		newUser.singleAttribute(PROFILE_LOCKED, Boolean.FALSE.toString());
@@ -817,8 +946,8 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		}
 
 		Set<String> pastCredentials = newUser.getDisableableCredentialTypes();
-		if (pastCredentials == null || pastCredentials.isEmpty()) {
-			pastCredentials = Collections.emptySet();
+		if (CollectionUtils.isEmpty(pastCredentials)) {
+			pastCredentials = new HashSet<>();
 		}
 		// add password to history
 		String newPassword = credRepresentation.getValue();
@@ -832,10 +961,10 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		CredentialRepresentation credentials = new CredentialRepresentation();
 		credentials.setTemporary(false);
 		credentials.setType(CredentialRepresentation.PASSWORD);
-		
+
 		String hashedPassword = passwordEncoder.encode(plainPassword);
 		credentials.setValue(hashedPassword);
-		
+
 		credentials.setCreatedDate(System.currentTimeMillis());
 
 		return credentials;
@@ -843,7 +972,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 	private String getCreatedUserId(Response response) {
 		// URI location = response.getLocation();
-		log.info("Repsonse: {}-{}", response.getStatus(), response.getStatusInfo());
+		log.info("Response: {}-{}", response.getStatus(), response.getStatusInfo());
 		log.info("Resource location {}", response.getLocation());
 
 		return CreatedResponseUtil.getCreatedId(response);
@@ -854,20 +983,14 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param authRequest
 	 * @return
 	 */
-	private Mono<String> login(AuthenticationRequest authRequest) {
-		String appRealm = authProperties.getAppRealm();
-		String baseUrl = authProperties.getBaseUrl();
-		String clientId = authProperties.getAdminClientId();
-		String clientSecret = authProperties.getAdminClientSecret();
+	private Mono<AccessTokenResponse> login(AuthenticationRequest authRequest) {
 
 		String username = authRequest.getUsername();
 		String password = authRequest.getPassword();
+		log.info("Username {}", username);
+		log.info("Password {}", password);
 
-		Keycloak localKeycloak = KeycloakBuilder.builder().grantType(OAuth2Constants.PASSWORD).serverUrl(baseUrl)
-				.realm(appRealm).username(username).password(password).clientId(clientId).clientSecret(clientSecret)
-				.build();
-
-		return Mono.fromCallable(() -> localKeycloak.tokenManager().getAccessTokenString());
+		return keycloakService.login(username, password);
 	}
 
 	/**
@@ -875,8 +998,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> doMfaValidation(@Valid final AuthenticationResponse authResponse,
-			@NotBlank final String totpCode) {
+	public Mono<String> doMfaValidation(final AuthenticationResponse authResponse, final String totpCode) {
 		String otpCode = authResponse.getOtpCode();
 		String username = authResponse.getUsername();
 
@@ -894,25 +1016,31 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public boolean isTotpEnabled(final UserRepresentation userRepresentation) {
-		List<String> totpEnabled = userRepresentation.getAttributes().getOrDefault(TOTP_ENABLED,
-				Collections.emptyList());
+		if (MapUtils.isEmpty(userRepresentation.getAttributes())) {
+			return false;
+		}
+
+		List<String> totpEnabled = userRepresentation.getAttributes().getOrDefault(TOTP_ENABLED, new ArrayList<>());
 
 		boolean enabled = false;
-		if (totpEnabled != null && !totpEnabled.isEmpty()) {
+		if (!CollectionUtils.isEmpty(totpEnabled)) {
 			enabled = Boolean.getBoolean(totpEnabled.get(0));
 		}
 
 		return enabled;
 	}
 
-	private boolean isTokenValid(UserRepresentation userRep, final String otpCode, final String totpCode) {
-		List<String> totpSecret = userRep.getAttributes().getOrDefault(TOTP_SECRET, Collections.emptyList());
+	private boolean isTokenValid(UserRepresentation userRepresentation, final String otpCode, final String totpCode) {
+		if (MapUtils.isEmpty(userRepresentation.getAttributes())) {
+			return false;
+		}
 
-		String userId = userRep.getId();
+		List<String> totpSecret = userRepresentation.getAttributes().getOrDefault(TOTP_SECRET, new ArrayList<>());
 
+		// String userId = userRepresentation.getId();
 		Boolean validTotpCode = false;
 		if (totpSecret.isEmpty()) {
-			log.warn("Totp Secret for user {} not found", userId);
+			log.warn("Totp Secret for user {} not found", userRepresentation.getId());
 			return validTotpCode;
 		}
 		// OTP Code is extracted from Cache entry
@@ -920,42 +1048,51 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		String formattedAuthCode = StringUtil.removeWhiteSpaces(totpCode);
 		if (StringUtils.isNotBlank(otpCode)) {
 			validTotpCode = otpCode.equals(formattedAuthCode);
-		} else {			
+		} else {
 			validTotpCode = totpManager.validateCode(formattedAuthCode, totpSecret.get(0));
 		}
 
 		return validTotpCode;
 	}
 
-	private void doProfileValidation(final UserRepresentation userRepresentation) {
-		List<String> profileLocked = userRepresentation.getAttributes().getOrDefault(PROFILE_LOCKED,
-				Collections.emptyList());
+	private Mono<String> doProfileValidation(final UserRepresentation userRepresentation) {
+		if (!userRepresentation.isEmailVerified()) {
+			log.info("User's email is unverified");
+			return raiseUserProfileUnverifiedException(new Object[] {});
+		}
+
+		log.info("User is Enabled? {}", userRepresentation.isEnabled());
+
+		if (!userRepresentation.isEnabled()) {
+			log.info("User's account is inactve");
+			return raiseUserProfileDisabledException(new Object[] {});
+		}
+
+		/*
+		if (MapUtils.isEmpty(userRepresentation.getAttributes())) {
+			return raiseUserHasNoAttributesException(new Object[] {});
+		}
+
+		List<String> profileLocked = userRepresentation.getAttributes().getOrDefault(PROFILE_LOCKED, new ArrayList<>());
 		List<String> profileExpired = userRepresentation.getAttributes().getOrDefault(PROFILE_EXPIRED,
-				Collections.emptyList());
+				new ArrayList<>());
 
 		if (profileLocked != null && !profileLocked.isEmpty()) {
 			if (Boolean.getBoolean(profileLocked.get(0))) {
 				log.info("User's account has been locked");
-				raiseUserProfileLockedException(new Object[] {});
+				return raiseUserProfileLockedException(new Object[] {});
 			}
 		}
 
 		if (profileExpired != null && !profileExpired.isEmpty()) {
 			if (Boolean.getBoolean(profileExpired.get(0))) {
 				log.info("User's account has expired");
-				raiseUserProfileExpiredException(new Object[] {});
+				return raiseUserProfileExpiredException(new Object[] {});
 			}
 		}
+		*/
 
-		if (!userRepresentation.isEmailVerified()) {
-			log.info("User's email is Unverified");
-			raiseUserProfileUnverifiedException(new Object[] {});
-		}
-
-		if (!userRepresentation.isEnabled()) {
-			log.info("User's account is inactve");
-			raiseUserProfileDisabledException(new Object[] {});
-		}
+		return Mono.just("SUCCESS");
 	}
 
 	/**
@@ -964,8 +1101,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<UserVO> updateOauthUserById(@Valid final UserDetailsUpdateRequest userDetails,
-			@NotBlank final String userId) {
+	public Mono<UserVO> updateOauthUserById(final UserDetailsUpdateRequest userDetails, final String userId) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(userId))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { userId }));
@@ -980,27 +1116,30 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<UserVO> updateOauthUser(@Valid final UserDetailsUpdateRequest userDetails,
-			@NotBlank final String username) {
+	public Mono<UserVO> updateOauthUser(final UserDetailsUpdateRequest userDetails, final String username) {
 
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResource(username))
 				.switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
 
-		return userRep.flatMap(userResource -> doUserDetailsUpdate(userResource, userDetails));
+		return userRep.flatMap(userResource -> {
+
+			return doProfileValidation(userResource.toRepresentation())
+					.then(doUserDetailsUpdate(userResource, userDetails));
+		});
 	}
 
 	private Mono<UserVO> doUserDetailsUpdate(UserResource userResource, UserDetailsUpdateRequest userDetails) {
 		// Create the user representation
 		UserRepresentation userRepresentation = userResource.toRepresentation();
-		// Do Profile checks on status
-		doProfileValidation(userRepresentation);
 
-		userRepresentation.setLastName(userDetails.getLastName());
-		userRepresentation.setFirstName(userDetails.getFirstName());
-		userRepresentation.singleAttribute(LAST_MODIFIED_DATE, String.valueOf(DateUtil.currentTimestamp()));
+		return Mono.fromRunnable(() -> {
 
-		return Mono.fromRunnable(() -> userResource.update(userRepresentation))
-				.thenReturn(UserMapper.toViewObject(userRepresentation))
+			userRepresentation.setLastName(userDetails.getLastName());
+			userRepresentation.setFirstName(userDetails.getFirstName());
+			userRepresentation.singleAttribute(LAST_MODIFIED_DATE, String.valueOf(DateUtil.currentTimestamp()));
+
+			userResource.update(userRepresentation);
+		}).thenReturn(UserMapper.toViewObject(userRepresentation))
 				.onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("update.user.error")));
 	}
 
@@ -1011,21 +1150,23 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @return
 	 */
 	@Override
-	public Mono<String> enableOauthUser(@Valid final ProfileActivationUpdateRequest profileStatus) {
+	public Mono<String> enableOauthUser(final ProfileActivationUpdateRequest profileStatus) {
 		Mono<UserResource> userRep = Mono.fromCallable(() -> getUserResourceById(profileStatus.getUserId()));
 
 		return userRep.flatMap(userResource -> doUserProfileUpdate(userResource, profileStatus));
 	}
 
-	private Mono<String> doUserProfileUpdate(UserResource userResource, ProfileActivationUpdateRequest userProfileUpdate) {
-		// Create the user representation
-		UserRepresentation userRepresentation = userResource.toRepresentation();
-		userRepresentation.setEnabled(userProfileUpdate.isEnable());
-		userRepresentation.singleAttribute(LAST_MODIFIED_DATE, String.valueOf(DateUtil.currentTimestamp()));
+	private Mono<String> doUserProfileUpdate(UserResource userResource,
+			ProfileActivationUpdateRequest userProfileUpdate) {
 
-		return Mono.fromRunnable(() -> userResource.update(userRepresentation))
-				.thenReturn(userProfileUpdate.isEnable() ? "User Profile is enabled" : "User Profile is disabled")
-				.onErrorResume(
+		return Mono.fromRunnable(() -> {
+			// Create the user representation
+			UserRepresentation userRepresentation = userResource.toRepresentation();
+			userRepresentation.setEnabled(userProfileUpdate.isEnable());
+			userRepresentation.singleAttribute(LAST_MODIFIED_DATE, String.valueOf(DateUtil.currentTimestamp()));
+			userResource.update(userRepresentation);
+		}).thenReturn(userProfileUpdate.isEnable() ? i8nMessageAccessor.getLocalizedMessage("message.user.enabled")
+				: i8nMessageAccessor.getLocalizedMessage("message.user.disabled")).onErrorResume(
 						handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("profileStatus.update.error")));
 	}
 
@@ -1034,24 +1175,29 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param user
 	 * @return
 	 */
+	@Override
 	public Mono<String> expireUserPassword(final UserRepresentation userRepresentation) {
 
 		String username = userRepresentation.getUsername();
+		log.info("Username to expire Password: {}", username);
+
 		// Set as True so that User is forced to change their password
 		userRepresentation.singleAttribute(PROFILE_EXPIRED, Boolean.TRUE.toString());
 		userRepresentation.singleAttribute(LAST_MODIFIED_DATE, String.valueOf(DateUtil.currentTimestamp()));
 
-		return Mono.fromRunnable(() -> {
+		return Mono.fromCallable(() -> {
 			UserResource userResource = getUserResource(username);
 
-			if (userResource == null) {
-				raiseResourceNotFoundError("user.notFound", new Object[] { username });
+			if (Objects.isNull(userResource)) {
+				log.info("User-Resource: {}", userResource);
+				return null;
+				// return raiseResourceNotFoundError("user.notFound", new Object[] { username
+				// });
 			}
-			userResource.update(userRepresentation);
-		})
 
-				.thenReturn(i8nMessageAccessor.getLocalizedMessage("auth.message.success"));
-		// .onErrorResume(handleWebFluxError(i8nMessageAccessor.getLocalizedMessage("expire.password.error")));
+			userResource.update(userRepresentation);
+			return i8nMessageAccessor.getLocalizedMessage("auth.message.success");
+		}).switchIfEmpty(raiseResourceNotFoundError("user.notFound", new Object[] { username }));
 	}
 
 	/**
@@ -1059,7 +1205,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public Mono<String> deleteAppUser(String userId) {
-		
+
 		return enableOauthUser(new ProfileActivationUpdateRequest(userId, false));
 	}
 

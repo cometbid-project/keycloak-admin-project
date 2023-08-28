@@ -24,6 +24,7 @@ import com.keycloak.admin.client.exceptions.SessionExpiredException;
 import com.keycloak.admin.client.exceptions.ServiceUnavailableException;
 import com.keycloak.admin.client.exceptions.UnauthenticatedUserException;
 import com.keycloak.admin.client.exceptions.UserAlreadyExistException;
+import com.keycloak.admin.client.exceptions.UserHasNoAttributesException;
 import com.keycloak.admin.client.exceptions.UserProfileDisabledException;
 import com.keycloak.admin.client.exceptions.UserProfileExpiredException;
 import com.keycloak.admin.client.exceptions.UserProfileLockedException;
@@ -98,8 +99,8 @@ public class ErrorPublisher {
 	public static <T> Mono<T> raiseResetPasswordTokenError(String messageKey, Object[] args) {
 		return Mono.error(new ResetPasswordTokenValidationException(messageKey, args));
 	}
-	
-	//================================================================================================================
+
+	// ================================================================================================================
 
 	public static void raiseRuntimeException(String message, Throwable ex) {
 		throw new ApplicationDefinedRuntimeException(message, ex);
@@ -109,20 +110,24 @@ public class ErrorPublisher {
 		throw new ServiceUnavailableException(messageKey, args);
 	}
 
-	public static void raiseUserProfileLockedException(Object[] args) {
-		throw new UserProfileLockedException(args);
+	public static <T> Mono<T> raiseUserHasNoAttributesException(Object[] args) {
+		return Mono.error(new UserHasNoAttributesException(args));
 	}
 
-	public static void raiseUserProfileExpiredException(Object[] args) {
-		throw new UserProfileExpiredException(args);
+	public static <T> Mono<T> raiseUserProfileLockedException(Object[] args) {
+		return Mono.error(new UserProfileLockedException(args));
 	}
 
-	public static void raiseUserProfileUnverifiedException(Object[] args) {
-		throw new UserProfileUnverifiedException(args);
+	public static <T> Mono<T> raiseUserProfileExpiredException(Object[] args) {
+		return Mono.error(new UserProfileExpiredException(args));
 	}
 
-	public static void raiseUserProfileDisabledException(Object[] args) {
-		throw new UserProfileDisabledException(args);
+	public static <T> Mono<T> raiseUserProfileUnverifiedException(Object[] args) {
+		return Mono.error(new UserProfileUnverifiedException(args));
+	}
+
+	public static <T> Mono<T> raiseUserProfileDisabledException(Object[] args) {
+		return Mono.error(new UserProfileDisabledException(args));
 	}
 
 	public static void raiseResourceNotFoundException(Object[] args) {
@@ -133,8 +138,8 @@ public class ErrorPublisher {
 		throw new PasswordNotAcceptableException(args);
 	}
 
-	public static void raisePasswordUnacceptableException(String messageKey, Object[] args) {
-		throw new PasswordNotAcceptableException(messageKey, args);
+	public static <T> Mono<T> raisePasswordUnacceptableException(String messageKey, Object[] args) {
+		return Mono.error(new PasswordNotAcceptableException(messageKey, args));
 	}
 
 	public static void raiseBadCredentialsException(String messageKey, Object[] args) {

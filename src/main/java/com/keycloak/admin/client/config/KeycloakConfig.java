@@ -23,25 +23,15 @@ import javax.ws.rs.client.ClientBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.glassfish.jersey.client.ClientAsyncExecutor;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.spi.ExecutorServiceProvider;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 
-//import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-//import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -55,44 +45,20 @@ import lombok.extern.log4j.Log4j2;
 public class KeycloakConfig {
 
 	private final AuthProperties keycloakProperties;
+	
+	private final KeycloakClientSslProperties keycloakSslProps;
 
-	/*
+	/**
 	 * User "admin client" needs at least "manage-users, view-clients, view-realm,
 	 * view-users" roles for "realm-management"
 	 */
 	@Bean
-	public Keycloak keycloakAdminClientFactory(KeycloakClientSslProperties keycloakSslProps) throws Exception {
+	public Keycloak keycloakAdminClientFactory(@Qualifier("keycloakClient-ExecutorService") 
+											ExecutorService executorService) throws Exception {
 		String clientId = keycloakProperties.getAdminClientId();
 		String clientSecret = keycloakProperties.getAdminClientSecret();
-		String serverUrl = keycloakProperties.getAuthServerUrl();
+		String serverUrl = keycloakProperties.getBaseUrl();
 		String realm = keycloakProperties.getAppRealm();
-		
-		Integer connectionPoolSize = keycloakProperties.getConnectionPoolSize();
-		Integer readTimeoutInMillis = keycloakProperties.getReadTimeoutInMillis();
-		Integer connectTimeoutInMillis = keycloakProperties.getConnectTimeoutInMillis();
-		Integer connectionTTLInSecs = keycloakProperties.getConnectTTLInSeconds();
-		Integer checkoutInMillis = keycloakProperties.getConnectCheckoutTimeoutInMillis();
-
-		final SSLContext sslContext = createSslContext(keycloakSslProps);
-
-		//final ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-		final ClientBuilder clientBuilder = new ResteasyClientBuilder()
-								.connectionPoolSize(connectionPoolSize); 
-		
-		if (sslContext != null) {
-			clientBuilder.sslContext(sslContext);
-		}
-
-		clientBuilder.hostnameVerifier(new NoopHostnameVerifier());
-		// clientBuilder.hostnameVerifier(new DefaultHostnameVerifier());
-
-		final ClientConfig clientConfig = new ClientConfig();
-		clientConfig.property(ClientProperties.CONNECT_TIMEOUT, connectTimeoutInMillis);
-		clientConfig.property(ClientProperties.READ_TIMEOUT, readTimeoutInMillis);
-		clientBuilder.withConfig(clientConfig);
-		
-		ResteasyClient resteasyClient = (ResteasyClient)clientBuilder.build();
-		resteasyClient.register(new MyExecutorServiceProvider());
 
 		// Get keycloak client
 		Keycloak keycloak = KeycloakBuilder.builder()
@@ -107,44 +73,55 @@ public class KeycloakConfig {
 				// Client-secret
 				.clientSecret(clientSecret)
 				//
-				.resteasyClient(resteasyClient)
+				.resteasyClient(resteasyClient(executorService))
+				//
 				.build();
 
 		return keycloak;
 	}
 
+	private ResteasyClient resteasyClient(ExecutorService executorService) throws Exception {
+		
+		Integer connectionPoolSize = keycloakProperties.getConnectionPoolSize();
+		Integer readTimeoutInMillis = keycloakProperties.getReadTimeoutInMillis();
+		Integer connectTimeoutInMillis = keycloakProperties.getConnectTimeoutInMillis();
+		Integer connectionTTLInSecs = keycloakProperties.getConnectTTLInSeconds();
+		Integer checkoutInMillis = keycloakProperties.getConnectCheckoutTimeoutInMillis();
+				
+		ResteasyClientBuilder clientBuilder = new ResteasyClientBuilderImpl()
+			      .connectTimeout(connectTimeoutInMillis, TimeUnit.MILLISECONDS)
+			      .readTimeout(readTimeoutInMillis, TimeUnit.MILLISECONDS)
+			      .connectionPoolSize(connectionPoolSize) 
+			      .connectionTTL(connectionTTLInSecs, TimeUnit.SECONDS)
+			      .connectionCheckoutTimeout(checkoutInMillis, TimeUnit.SECONDS) 
+			      .executorService(executorService)
+			      //.trustStore(trustStore)
+			      .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY);
+		
+		boolean keycloakSslEnabled = keycloakProperties.isKeycloakSslEnabled();
+		if (keycloakSslEnabled) {
+			final SSLContext sslContext = createSslContext(keycloakSslProps);
+			if (sslContext != null) {
+				clientBuilder.sslContext(sslContext);
+			}
+		}	
+		
+		return clientBuilder.build();
+	}	
 	
-	@ClientAsyncExecutor
-	static class MyExecutorServiceProvider implements ExecutorServiceProvider {
-
-		@Autowired
-		@Qualifier("keycloakClientWorkerThreadPool")
-		private ExecutorService executorService;
-
-		@Override
-		public ExecutorService getExecutorService() {
-			System.out.println("Calling getExecutorService()");
-
-			return executorService;
-		}
-
-		@Override
-		public void dispose(ExecutorService executorService) {
-			executorService.shutdown();
-		}
-	}
-
 	/**
 	 * 
 	 * @return
 	 * @throws InterruptedException
 	 */
-	@Bean(name = "keycloakClientWorkerThreadPool", destroyMethod = "shutdown")
+	@Bean(name = "keycloakClient-ExecutorService", destroyMethod = "shutdown")
 	public ExecutorService keycloackWorkerExecutor() throws InterruptedException {
 
 		BasicThreadFactory customThreadfactory = new BasicThreadFactory.Builder()
-				.namingPattern("Keycloak-Client-Executor-WorkerthreadPool-%d").daemon(true)
-				.priority(Thread.MAX_PRIORITY).uncaughtExceptionHandler(new UncaughtExceptionHandler() {
+				.namingPattern("Keycloak-Client-thread-%d")
+				.daemon(false)
+				.priority(Thread.MAX_PRIORITY)
+				.uncaughtExceptionHandler(new UncaughtExceptionHandler() {
 					@Override
 					public void uncaughtException(Thread t, Throwable e) {
 
@@ -207,10 +184,14 @@ public class KeycloakConfig {
 		instance.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 		return instance;
 	}
-	
+
+	/*
 	@PreDestroy
-	public void closeKeycloak(Keycloak keycloak) {
-		keycloak.close();
+	public void closeKeycloak() {
+		Keycloak keycloak = context.getBean(Keycloak.class);
+		if (keycloak != null && !keycloak.isClosed()) {
+			keycloak.close();
+		}
 	}
-	
+	*/
 }

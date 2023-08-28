@@ -163,7 +163,7 @@ public class ReactiveRedisComponent {
 
 	/**
 	 * Get an entry by key. First locate the index of the entry, and uses the index
-	 * to locate the entry. Used mostly to confirm the existence of an entry value
+	 * to locate the entry. Used mostly to confirm the existence of an entry value. 
 	 * 
 	 * Currently doesn't work as expected. Still under Test
 	 * @param key
@@ -492,58 +492,15 @@ public class ReactiveRedisComponent {
 	
 	/**
 	 * Removes the given key entry
+	 * Currently doesn't work as expected. Still under Test
 	 * 
 	 * @param key
 	 * @return
 	 */
-	public Mono<Object> GetAndDeletePojo(@NonNull String key) {
+	public Mono<Object> getAndDeletePojo(@NonNull String key) {
 
 		Mono<Object> lPop = redisOperations.opsForValue().getAndDelete(key).log(String.format("Key(%s) entry Deleted", key)); 
 		return lPop;
 	}
 
-	/**
-	 * Set key and value into a hash key
-	 * 
-	 * @param key     key value - must not be null.
-	 * @param hashKey hash key value - must not be null.
-	 * @param val     Object value
-	 * @return Mono of object
-	 */
-	public Mono<Object> set(String key, String hashKey, Object val) {
-		return redisOperations.opsForHash().put(key, hashKey, val).map(b -> val)
-				.log(String.format("Key entry(%s) under %s Saved", hashKey, key));
-	}
-
-	/**
-	 * @param key key value - must not be null.
-	 * @return Flux of Object
-	 */
-	public Flux<Object> get(@NotNull String key) {
-		return redisOperations.opsForHash().values(key).log(String.format("All entries under %s Retrieved", key));
-	}
-
-	/**
-	 * Get value for given hashKey from hash at key.
-	 * 
-	 * @param key     key value - must not be null.
-	 * @param hashKey hash key value - must not be null.
-	 * @return Object
-	 */
-	public Mono<Object> get(String key, Object hashKey) {
-		return redisOperations.opsForHash().get(key, hashKey)
-				.log(String.format("Key entry(%s) under %s Retrieved", hashKey, key));
-	}
-
-	/**
-	 * Delete a key that contained in a hash key.
-	 * 
-	 * @param key     key value - must not be null.
-	 * @param hashKey hash key value - must not be null.
-	 * @return 1 Success or 0 Error
-	 */
-	public Mono<Long> remove(String key, Object hashKey) {
-		return redisOperations.opsForHash().remove(key, hashKey)
-				.log(String.format("Key entry(%s) under %s Deleted", hashKey, key));
-	}
 }

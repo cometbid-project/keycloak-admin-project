@@ -1,6 +1,6 @@
 spring:
   application.name: keycloak-admin-client
-  lifecycle.timeout-per-shutdown-phase: 1m
+  lifecycle.timeout-per-shutdown-phase: 30s
   jackson:
     default-property-inclusion: non-default
     serialization:
@@ -145,12 +145,14 @@ totp.code.length: 8
 totp.time.period: 15
 totp.time.discrepancy: 2
 totp.qrCode.issuer: Cometbid.com
-totp.session.ttl: 1800
-password.reset.session.ttl: 1800
-pricing.plan.token.ttl: 1800
+totp.session.ttl: 2000
+password.reset.session.ttl: 2000
+pricing.plan.token.ttl: 2000
+blocked.ips.ttl: 86400
 
 #management.endpoints.web.exposure.include=*
 management.endpoints.web.exposure.include: health, info, metrics
 management.endpoints.web.base-path: /manage
 
+#quarkus.resteasy-json.json-default=false
        

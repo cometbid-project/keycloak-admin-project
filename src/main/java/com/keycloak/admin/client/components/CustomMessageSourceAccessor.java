@@ -5,8 +5,6 @@ package com.keycloak.admin.client.components;
 
 import java.util.Locale;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
@@ -21,20 +19,13 @@ import com.keycloak.admin.client.common.utils.LocaleContextUtils;
  *
  */
 @Component
-public class CustomMessageSourceAccessor {
-
-	@Autowired
-	@Qualifier("messageSource")
-	private MessageSource messageSource;
-
-	private MessageSourceAccessor messageAccessor;
+public class CustomMessageSourceAccessor extends MessageSourceAccessor {
 
 	@Nullable
 	private final Locale defaultLocale = Locale.US;
 
-	@PostConstruct
-	public void init() {
-		messageAccessor = new MessageSourceAccessor(messageSource);
+	public CustomMessageSourceAccessor(@Qualifier("messageSource") MessageSource messageSource) {
+		super(messageSource);
 	}
 
 	/**
@@ -45,7 +36,7 @@ public class CustomMessageSourceAccessor {
 	 */
 	public String getLocalizedMessage(String messageKey, Object[] args) {
 
-		return messageAccessor.getMessage(messageKey, args, LocaleContextUtils.getContextLocale());
+		return this.getMessage(messageKey, args, LocaleContextUtils.getContextLocale());
 	}
 
 	/**
@@ -55,7 +46,7 @@ public class CustomMessageSourceAccessor {
 	 */
 	public String getLocalizedMessage(String messageKey) {
 
-		return messageAccessor.getMessage(messageKey, new Object[] {}, LocaleContextUtils.getContextLocale());
+		return this.getMessage(messageKey, new Object[] {}, LocaleContextUtils.getContextLocale());
 	}
 
 	/**

@@ -288,7 +288,7 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 	@PreAuthorize("hasRole('ADMIN')")
 	public Mono<String> assignRealmRole(@NotBlank final String userId, @NotBlank final String roleName) {
 
-		return keycloakClient.assignRealmRole(userId, roleName)
+		return keycloakClient.assignUserRealmRole(userId, roleName)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
 								"User assigned a Realm role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))
@@ -306,7 +306,7 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 	public Mono<String> assignClientRoleToUser(@NotBlank final String userId, @NotBlank final String roleName,
 			@NotBlank final String actualClientId) {
 
-		return keycloakClient.assignClientRole(userId, actualClientId, roleName)
+		return keycloakClient.assignUserClientRole(userId, actualClientId, roleName)
 				.doOnSuccess(profile -> this.eventPublisher.publishEvent(
 						new GenericSpringEvent<>(ActivityEventTypes.UPDATE_AUTH_PROFILE_EVENT, StringUtils.EMPTY,
 								"User assigned a Client role successfully", ObjectType.USER_AUTH, ContentType.AUTH)))

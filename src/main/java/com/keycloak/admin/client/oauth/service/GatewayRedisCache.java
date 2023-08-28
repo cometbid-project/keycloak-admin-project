@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import com.keycloak.admin.client.models.AuthenticationResponse;
-import com.keycloak.admin.client.models.TotpRequest;
 import com.keycloak.admin.client.redis.service.ReactiveRedisComponent;
 
 import lombok.extern.log4j.Log4j2;
@@ -34,10 +33,10 @@ public class GatewayRedisCache {
 	private Long totpSessionTTL;
 	private Long passwordResetSessionTTL;
 	private Long pricingPlanTTL;
+	private Long blockedIpTTL;
 
 	private final ReactiveRedisComponent cacheUtil;
-
-	private final static String BLOCKED_IPADDRESSES = "blocked_ips";
+	//private final static String BLOCKED_IPADDRESSES = "blocked_ips";
 
 	public GatewayRedisCache(@Qualifier("redis") ReactiveRedisComponent cacheUtil, Environment environment) {
 		this.cacheUtil = cacheUtil;
@@ -46,27 +45,30 @@ public class GatewayRedisCache {
 		init();
 	}
 
-	//@PostConstruct
+	// @PostConstruct
 	public void init() {
-
-		cacheUtil.append(BLOCKED_IPADDRESSES, getDefaultIPList());
 
 		String configTotpTimeout = environment.getProperty("totp.session.ttl");
 		this.totpSessionTTL = StringUtils.isNotBlank(configTotpTimeout) ? Long.valueOf(configTotpTimeout) : 1800L;
-		
+		log.info("Totp Session Time to live {}", totpSessionTTL);
+
 		String configPasswdResetTimeout = environment.getProperty("password.reset.session.ttl");
-		this.passwordResetSessionTTL = StringUtils.isNotBlank(configPasswdResetTimeout) ? Long.valueOf(configPasswdResetTimeout) : 1800L;
-		
+		this.passwordResetSessionTTL = StringUtils.isNotBlank(configPasswdResetTimeout)
+				? Long.valueOf(configPasswdResetTimeout)
+				: 1800L;
+		log.info("Password reset Session Time to live {}", passwordResetSessionTTL);
+
 		String configPricingPlanTokenTimeout = environment.getProperty("pricing.plan.token.ttl");
-		this.pricingPlanTTL = StringUtils.isNotBlank(configPricingPlanTokenTimeout) ? Long.valueOf(configPricingPlanTokenTimeout) : 1800L;
-	}
-	
-	private List<String> getDefaultIPList() {
-		List<String> list = new ArrayList<>();
-		// add arbitrary IP Addr
-		list.add("xxx.xxx.xxx.xxx");
+		this.pricingPlanTTL = StringUtils.isNotBlank(configPricingPlanTokenTimeout)
+				? Long.valueOf(configPricingPlanTokenTimeout)
+				: 1800L;
+		log.info("Pricing plan Time to live {}", pricingPlanTTL);
 		
-		return list;
+		String configBlockedIpTimeout = environment.getProperty("blocked.ips.ttl");
+		this.blockedIpTTL = StringUtils.isNotBlank(configBlockedIpTimeout)
+				? Long.valueOf(configBlockedIpTimeout)
+				: 86400L;
+		log.info("Blocked IPs Time to live {}", blockedIpTTL);
 	}
 
 	/**
@@ -74,8 +76,10 @@ public class GatewayRedisCache {
 	 * @return
 	 */
 	public Mono<Long> saveAsBlockedIp(String ipAddr) {
-		
-		return cacheUtil.appendIfPresent(BLOCKED_IPADDRESSES, ipAddr);
+
+		return cacheUtil.putIfAbsent(ipAddr, Integer.valueOf(0), blockedIpTTL)
+				.then(cacheUtil.incrementThis(ipAddr));
+		//return cacheUtil.incrementThis(ipAddr);
 	}
 
 	/**
@@ -114,8 +118,10 @@ public class GatewayRedisCache {
 	 */
 	public Mono<Boolean> isBlockedIp(String ipAddr) {
 
-		return cacheUtil.get(BLOCKED_IPADDRESSES, ipAddr).flatMap(obj -> Mono.just(Optional.of(obj)))
-				.defaultIfEmpty(Optional.empty()).map(valueOptional -> valueOptional.isPresent()).onErrorReturn(false);
+		return cacheUtil.getPojo(ipAddr)
+				.flatMap(obj -> Mono.just(Optional.of(obj)))
+				.defaultIfEmpty(Optional.empty())
+				.map(valueOptional -> valueOptional.isPresent()).onErrorReturn(false);
 	}
 
 	/**
@@ -138,7 +144,7 @@ public class GatewayRedisCache {
 
 		return cacheUtil.putIfAbsent(resetPasswordSessionId, username, passwordResetSessionTTL);
 	}
-	
+
 	/**
 	 * 
 	 * @param resetPasswordSessionId
@@ -179,15 +185,15 @@ public class GatewayRedisCache {
 		// TODO Auto-generated method stub
 		return cacheUtil.deletePojo(cacheKey);
 	}
-	
+
 	/**
 	 * 
 	 * @param cacheKey
 	 * @return
 	 */
-	public Mono<Long> removeBlockedIPEntry(String ipAddress) {
+	public Mono<Boolean> removeBlockedIPEntry(String ipAddress) {
 		// TODO Auto-generated method stub
-		return cacheUtil.delete(BLOCKED_IPADDRESSES, 1L, ipAddress); 
+		return cacheUtil.deletePojo(ipAddress);
 	}
 
 	/**
@@ -195,9 +201,10 @@ public class GatewayRedisCache {
 	 * @param cacheKey
 	 * @return
 	 */
+	/*
 	public Mono<Long> purgeBlockedIPEntriesCache() {
 		// TODO Auto-generated method stub
-		return cacheUtil.deleteAll(BLOCKED_IPADDRESSES, getDefaultIPList()); 
+		return cacheUtil.deleteAll(BLOCKED_IPADDRESSES, getDefaultIPList());
 	}
-
+	*/
 }

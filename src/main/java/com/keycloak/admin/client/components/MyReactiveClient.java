@@ -220,7 +220,7 @@ public class MyReactiveClient implements ReactiveClientInterface {
 					if (headerFields != null) {
 						headers.putAll(headerFields);
 					}
-				}).accept(MediaType.APPLICATION_JSON).acceptCharset(StandardCharsets.UTF_8)
+				}).accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML).acceptCharset(StandardCharsets.UTF_8)
 				.exchangeToMono(clientResponse -> processResponse(clientResponse, clazzResponse));
 	}
 

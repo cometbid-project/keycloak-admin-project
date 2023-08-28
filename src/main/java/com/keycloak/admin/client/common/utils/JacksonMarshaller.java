@@ -6,10 +6,11 @@ package com.keycloak.admin.client.common.utils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
+//import com.google.common.base.Preconditions;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 /**
@@ -32,7 +33,8 @@ public final class JacksonMarshaller implements IMarshaller {
 
     @Override
     public final <T> String encode(final T resource) {
-        Preconditions.checkNotNull(resource);
+    	Objects.requireNonNull(resource);
+    	
         String entityAsJSON = null;
         try {
             entityAsJSON = objectMapper.writeValueAsString(resource);
@@ -45,7 +47,7 @@ public final class JacksonMarshaller implements IMarshaller {
 
     @Override
     public final <T> T decode(final String resourceAsString, final Class<T> clazz) {
-        Preconditions.checkNotNull(resourceAsString);
+    	Objects.requireNonNull(resourceAsString);
 
         T entity = null;
         try {
@@ -60,7 +62,7 @@ public final class JacksonMarshaller implements IMarshaller {
     @SuppressWarnings("unchecked")
     @Override
     public final <T> List<T> decodeList(final String resourcesAsString, final Class<T> clazz) {
-        Preconditions.checkNotNull(resourcesAsString);
+    	Objects.requireNonNull(resourcesAsString);
 
         List<T> entities = null;
         try {

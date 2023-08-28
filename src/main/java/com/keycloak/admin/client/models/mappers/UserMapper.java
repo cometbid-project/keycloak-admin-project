@@ -10,7 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -78,10 +80,16 @@ public class UserMapper {
 				isMfaEnabled = Boolean.getBoolean(totpEnabled.get(0));
 			}
 		}
+		
+		List<String> realmRoles = user.getRealmRoles();
+		Set<String> setOfRoles = new HashSet<>();
+		if(CollectionUtil.isNotEmpty(realmRoles)) {
+			setOfRoles.addAll(realmRoles);  
+		}		
 
 		return UserVO.builder().id(user.getId())
 				.username(user.getUsername())
-				.roles(new HashSet<>(user.getRealmRoles()))
+				.roles(setOfRoles)
 				.email(user.getEmail())
 				.firstName(user.getFirstName()) 
 				.lastName(user.getLastName()) 

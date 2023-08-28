@@ -21,20 +21,22 @@
 		<start-class>com.keycloak.admin.client.KeycloakAdminProjectApplication</start-class>
 		<java.version>17</java.version>
 		<javafaker.version>1.0.2</javafaker.version>
-		<keycloak.version>20.0.1</keycloak.version>
+		<keycloak.version>20.0.0</keycloak.version>
 		<open-api-doc>1.6.9</open-api-doc>
 		<passay.version>1.6.0</passay.version>
 		<blockhound.version>1.0.6.RELEASE</blockhound.version>
 		<jsonwebtoken.version>0.11.2</jsonwebtoken.version>
 		<uap-java.version>1.5.3</uap-java.version>
 		<jodatime.version>2.10.8</jodatime.version>
-		<resteasy.version>3.15.1.Final</resteasy.version>
+		<resteasy.version>4.7.4.Final</resteasy.version>
+		<quarkus.version>2.16.0.Final</quarkus.version>
 		<xstream.version>1.4.19</xstream.version>
-		<spring-cloud.version>2020.0.3</spring-cloud.version>
+		<spring-cloud.version>2021.0.3</spring-cloud.version>
 		<samstevens.totp.version>1.7.1</samstevens.totp.version>
-		<test-container-version>1.17.6</test-container-version>
+		<test-container-version>1.17.3</test-container-version>
 		<restdocs-api-spec.version>0.16.2</restdocs-api-spec.version>
 		<restdocs-spec.version>0.19</restdocs-spec.version>
+		<maven-shade.version>3.2.4</maven-shade.version>
 		<keycloak-test-container-version>2.4.0</keycloak-test-container-version>
 		<embedded-cloud-container-version>2.2.10</embedded-cloud-container-version>
 	</properties>
@@ -59,6 +61,13 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
 				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${test-container-version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -136,29 +145,13 @@
 			<artifactId>spring-security-oauth2-jose</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.keycloak</groupId>
-			<artifactId>keycloak-admin-client</artifactId>
-			<version>${keycloak.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-client</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-multipart-provider</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-jackson2-provider</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>${keycloak.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.maxmind.geoip2</groupId>
@@ -179,10 +172,6 @@
 			<groupId>org.modelmapper</groupId>
 			<artifactId>modelmapper</artifactId>
 			<version>3.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.jersey.core</groupId>
-			<artifactId>jersey-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -228,7 +217,6 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.4</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.samstevens.totp</groupId>
@@ -266,15 +254,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-engine</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.restdocs</groupId>
 			<artifactId>spring-restdocs-asciidoctor</artifactId>
 			<scope>test</scope>
@@ -284,14 +263,8 @@
 			<artifactId>spring-restdocs-webtestclient</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!--  
-		<dependency>
-			<groupId>io.projectreactor.tools</groupId>
-			<artifactId>blockhound-junit-platform</artifactId>
-			<version>${blockhound.version}</version>
-			<scope>test</scope>
-		</dependency>
-		-->
+		<!-- <dependency> <groupId>io.projectreactor.tools</groupId> <artifactId>blockhound-junit-platform</artifactId> 
+			<version>${blockhound.version}</version> <scope>test</scope> </dependency> -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -345,17 +318,18 @@
 		<dependency>
 			<groupId>io.rest-assured</groupId>
 			<artifactId>rest-assured</artifactId>
-			<version>5.3.0</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>org.codehaus.groovy</groupId>
 					<artifactId>groovy-xml</artifactId>
 				</exclusion>
+				<!--  
 				<exclusion>
 					<groupId>org.codehaus.groovy</groupId>
 					<artifactId>groovy-json</artifactId>
 				</exclusion>
+				-->
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -363,13 +337,31 @@
 			<artifactId>testcontainers-keycloak</artifactId>
 			<version>${keycloak-test-container-version}</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.keycloak</groupId>
+					<artifactId>keycloak-admin-client</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-		<!-- <dependency> <groupId>org.testcontainers</groupId> <artifactId>testcontainers</artifactId> 
-			<version>${test-container-version}</version> <scope>test</scope> </dependency> -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>${test-container-version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- <dependency> <groupId>com.playtika.testcontainers</groupId> <artifactId>embedded-kafka</artifactId> 
@@ -384,7 +376,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-contract-wiremock</artifactId>
-			<version>3.1.3</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -444,6 +435,23 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!--  
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<artifactSet>
+						<includes>
+							<include>org.jboss.resteasy:resteasy-client*</include>
+						</includes>
+					</artifactSet>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+			</plugin>
+			-->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

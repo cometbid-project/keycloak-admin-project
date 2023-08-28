@@ -22,27 +22,25 @@ public class AuthProperties {
 
 	@Value("${keycloak.admin-client.client_secret}")
 	private String adminClientSecret;
+	
+	@Value("${keycloak.ssl-enabled}")
+	private boolean keycloakSslEnabled;	
 
-	@Value("${keycloak.admin.username}")
-	private String adminUsername;
-
-	@Value("${keycloak.admin.password}")
-	private String adminPassword;
-
-	@Value("${keycloak.credentials.client_id}")
+	@Value("${keycloak.credentials.clientA_id}")
 	private String clientId;
 
-	@Value("${keycloak.credentials.client_secret}")
+	@Value("${keycloak.credentials.clientA_secret}")
 	private String clientSecret;
 
-	@Value("${keycloak.auth_server_url}")
-	private String authServerUrl;
+	//@Value("${keycloak.auth_server_url}")
+	//private String authServerUrl;
 
 	@Value("${keycloak.realm}")
 	private String appRealm;
 
-	@Value("${keycloak.authorization_grant_type}")
-	private String authGrantType;
+	// Default to 10Mb
+	@Value("${keycloak.client.codec.maxInMemorySize:10485760}")
+	private Integer codecInMemorySize;
 	
 	@Value("${keycloak.client.requestTimeoutInMillis:100}")
 	private Integer requestTimeoutInMillis;
@@ -61,6 +59,18 @@ public class AuthProperties {
 
 	@Value("${keycloak.client.connection.checkoutTimeoutInMillis:100}")
 	private Integer connectCheckoutTimeoutInMillis;
+	
+	@Value("${keycloak.client.connection.handshakeTimeout:30}")
+	private Integer handshakeTimeout;
+	
+	@Value("${keycloak.client.connection.notifyFlushTimeout:30}")
+	private Integer notifyFlushTimeout;
+	
+	@Value("${keycloak.client.connection.notifyReadTimeout:30}")
+	private Integer notifyReadTimeout;
+	
+	@Value("${keycloak.client.connection.responseTimeout:3600}")
+	private Integer responseTimeout;
 
 	// ----------------------------------------------------------------
 	@Value("${keycloak.client.waitTimeInMillis:500}")
@@ -76,11 +86,8 @@ public class AuthProperties {
 	@Value("${keycloak.auth.authorize-url-pattern}")
 	private String authorizeUrlPattern;
 
-	@Value("${server.auth.redirectUrl}")
-	private String redirectUrl;
-
-	@Value("${keycloak.logout-uri}")
-	private String logoutUrl;
+	//@Value("${server.auth.redirectUrl}")
+	//private String redirectUrl;
 
 	@Value("${keycloak.user-info-uri}")
 	private String keycloakUserInfo;
@@ -109,11 +116,8 @@ public class AuthProperties {
 
 	@Value("${jwt.refreshToken.cookieMaxAgeInMins:30}")
 	private Integer refreshTokenCookieInMinutes;
-	
-	@Value("${keycloak.audience}")
-	private String keycloakAudience;
 
-	@Value("${jwt.token.audience}")
+	@Value("${jwt.token.audience-a}")
 	private String localTokenAudience;
 
 	@Value("${jwt.token.issuer}")

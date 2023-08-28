@@ -40,12 +40,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-import com.keycloak.admin.client.KeycloakAdminProjectApplication;
-import com.keycloak.admin.client.common.enums.Role;
-import com.keycloak.admin.client.common.events.GenericSpringEvent;
 import com.keycloak.admin.client.common.utils.LocaleContextUtils;
 import com.keycloak.admin.client.components.CustomMessageSourceAccessor;
 import com.keycloak.admin.client.config.AppConfiguration;

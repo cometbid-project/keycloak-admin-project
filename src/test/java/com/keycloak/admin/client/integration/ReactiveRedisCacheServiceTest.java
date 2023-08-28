@@ -5,8 +5,12 @@ package com.keycloak.admin.client.integration;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +33,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
 import com.keycloak.admin.client.KeycloakAdminProjectApplication;
+import com.keycloak.admin.client.common.utils.RandomGenerator;
 import com.keycloak.admin.client.config.ReactiveRedisConfig;
+import com.keycloak.admin.client.dataacess.AuthBuilder;
+import com.keycloak.admin.client.dataacess.UserBuilder;
+import com.keycloak.admin.client.models.AuthenticationResponse;
+import com.keycloak.admin.client.models.UserVO;
+import com.keycloak.admin.client.models.Username;
 import com.keycloak.admin.client.oauth.service.GatewayRedisCache;
 import com.keycloak.admin.client.redis.condition.EnabledOnRedisAvailable;
 import com.keycloak.admin.client.redis.service.ReactiveRedisComponent;
@@ -452,7 +462,7 @@ class ReactiveRedisCacheServiceTest extends AbstractRedisRepositoryTest {
 		Mono<Long> result = redisComponent.append(key, listOfVal);
 		StepVerifier.create(result).expectNextCount(1L).verifyComplete();
 		
-		// =================================================================
+		// ====================================================================
 		
 		Mono<String> popResult = redisComponent.pop(key);
 		StepVerifier.create(popResult).expectNext("value1").verifyComplete();
@@ -623,34 +633,37 @@ class ReactiveRedisCacheServiceTest extends AbstractRedisRepositoryTest {
 		Mono<Boolean> resultSave = redisComponent.putIfAbsent(key, Integer.valueOf(0)); 
 		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
 
-		Mono<Long> resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(1L).verifyComplete();
+		Mono<Long> resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(1L).verifyComplete();
 		
 		// ======================================================================
 		
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(2L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(2L).verifyComplete();
 				
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(3L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(3L).verifyComplete();
 				
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(4L).verifyComplete();	
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(4L).verifyComplete();	
 		
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(5L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(5L).verifyComplete();
 		
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(6L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(6L).verifyComplete();
 				
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(7L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(7L).verifyComplete();
 				
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(8L).verifyComplete();	
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(8L).verifyComplete();	
 		
-		resultDecrement = redisComponent.incrementThis(key);
-		StepVerifier.create(resultDecrement).expectNext(9L).verifyComplete();
+		resultIncrement = redisComponent.incrementThis(key);
+		StepVerifier.create(resultIncrement).expectNext(9L).verifyComplete();
+		
+		Mono<Object> expectedMessage = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedMessage).expectNext(9).verifyComplete(); 
 	}
 	
 	/**
@@ -696,8 +709,7 @@ class ReactiveRedisCacheServiceTest extends AbstractRedisRepositoryTest {
 		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
 
 		Mono<Double> resultDecrement = redisComponent.incrementThis(key, Double.valueOf(2.25)); 
-		StepVerifier.create(resultDecrement).expectNext(7.50).verifyComplete();
-	
+		StepVerifier.create(resultDecrement).expectNext(7.50).verifyComplete();	
 	}
 	
 	/**
@@ -733,7 +745,7 @@ class ReactiveRedisCacheServiceTest extends AbstractRedisRepositoryTest {
 	}
 	
 	/**
-	 * 
+	 * To be expanded to simulate timeout for key entries
 	 */
 	@DisplayName("to test Put if Absent with Timeout Value function")
 	@Test
@@ -792,4 +804,256 @@ class ReactiveRedisCacheServiceTest extends AbstractRedisRepositoryTest {
 		log.info("Blocking pop...done!");		
 		*/
 	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Put Pojo Value function")
+	@Test
+	void verifyPutPojoValueWorks() {
+
+		String key = "key";
+		Username user = new Username("name", "Role");		
+		
+		Mono<Boolean> resultSave = redisComponent.putPojo(key, user); 
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedPojo = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedPojo).expectNext(user).verifyComplete();
+		
+		// ========================================================================
+		Username editPojo = new Username("anotherName", "anotherRole");
+		Mono<Boolean> resultDelete = redisComponent.deletePojo(key);  
+		StepVerifier.create(resultDelete).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Boolean> expectedSuccessSave = redisComponent.putPojo(key, editPojo); 
+		StepVerifier.create(expectedSuccessSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedEditedMessage = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedEditedMessage).expectNext(editPojo).verifyComplete();
+		
+		// ========================================================================
+		UUID userId = UUID.randomUUID();
+		UserVO userVO = UserBuilder.user().userVo(userId);
+		
+		AuthenticationResponse authResponse = AuthBuilder.auth(userVO).authResponse();
+		
+		String totpSessionId = RandomGenerator.generateSessionId();
+				
+		Mono<Boolean> expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+				
+		Mono<Object> expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+		// ========================================================================				
+		resultDelete = redisComponent.deletePojo(totpSessionId);  
+		StepVerifier.create(resultDelete).expectNext(Boolean.TRUE).verifyComplete();
+										
+		expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+						
+		expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+	}
+	
+	/**
+	 * To be expanded to simulate timeout for key entries
+	 */
+	@DisplayName("to test Put Pojo with Timeout Value function")
+	@Test
+	void verifyPutPojoWithTimeoutValueWorks() {
+
+		String key = "key";
+		Username user = new Username("name", "Role");		
+		long timeoutSession = 1L;
+				
+		Mono<Boolean> resultSave = redisComponent.putPojo(key, user, timeoutSession); 
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedPojo = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedPojo).expectNext(user).verifyComplete();
+		
+		// ========================================================================
+		UUID userId = UUID.randomUUID();
+		UserVO userVO = UserBuilder.user().userVo(userId);
+		
+		AuthenticationResponse authResponse = AuthBuilder.auth(userVO).authResponse();
+		
+		String totpSessionId = RandomGenerator.generateSessionId();
+				
+		Mono<Boolean> expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse, timeoutSession); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+				
+		Mono<Object> expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Put Multi Pojo Value function")
+	@Test
+	void verifyPutMultiPojoValueWorks() {
+
+		String[] keys = {"key1", "key2"};
+		Username[] users = {new Username("name1", "Role1"), new Username("name2", "Role2")};
+		
+		Map<String, Object> listOfUsers = new HashMap<>();
+		listOfUsers.put(keys[0], users[0]);
+		listOfUsers.put(keys[1], users[1]);
+				
+		Mono<Boolean> resultSave = redisComponent.putMultiPojo(listOfUsers); 		
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<List<Object>> expectedPojo = redisComponent.getMultiPojo(Arrays.asList(keys));   
+		StepVerifier.create(expectedPojo).expectNext(Arrays.asList(users)).verifyComplete();		
+	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Get Pojo Value function")
+	@Test
+	void verifyGetPojoValueWorks() {
+
+		String key = "key";
+		Username user = new Username("name", "Role");		
+		
+		Mono<Boolean> resultSave = redisComponent.putPojo(key, user); 
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedPojo = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedPojo).expectNext(user).verifyComplete();
+		
+		// ========================================================================
+		Username editPojo = new Username("anotherName", "anotherRole");
+		Mono<Boolean> resultDelete = redisComponent.deletePojo(key);  
+		StepVerifier.create(resultDelete).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Boolean> expectedSuccessSave = redisComponent.putPojo(key, editPojo); 
+		StepVerifier.create(expectedSuccessSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedEditedMessage = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedEditedMessage).expectNext(editPojo).verifyComplete();
+	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Get Multi Pojo Value function")
+	@Test
+	void verifyGetMultiPojoValueWorks() {
+
+		String[] keys = {"key1", "key2"};
+		Username[] users = {new Username("name1", "Role1"), new Username("name2", "Role2")};
+		
+		Map<String, Object> listOfUsers = new HashMap<>();
+		listOfUsers.put(keys[0], users[0]);
+		listOfUsers.put(keys[1], users[1]);
+				
+		Mono<Boolean> resultSave = redisComponent.putMultiPojo(listOfUsers); 		
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<List<Object>> expectedPojo = redisComponent.getMultiPojo(Arrays.asList(keys));   
+		StepVerifier.create(expectedPojo).expectNext(Arrays.asList(users)).verifyComplete();		
+	}
+	
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Replace Pojo Value function")
+	@Test
+	void verifyReplacePojoValueWorks() {
+
+		String key = "key";
+		Username user = new Username("name", "Role");		
+		
+		Mono<Boolean> resultSave = redisComponent.putPojo(key, user); 
+		StepVerifier.create(resultSave).expectNext(Boolean.TRUE).verifyComplete();
+		
+		Mono<Object> expectedPojo = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedPojo).expectNext(user).verifyComplete();
+		
+		// ===========================================================================
+		
+		Username editPojo = new Username("anotherName", "anotherRole");
+		
+		Mono<Object> expectedSuccessSave = redisComponent.replacePojo(key, editPojo);   
+		StepVerifier.create(expectedSuccessSave).expectNext(user).verifyComplete();	
+		
+		Mono<Object> expectedEditedMessage = redisComponent.getPojo(key);  
+		StepVerifier.create(expectedEditedMessage).expectNext(editPojo).verifyComplete();		
+	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Delete Pojo Value function")
+	@Test
+	void verifyDeletePojoValueWorks() {
+		
+		UUID userId = UUID.randomUUID();
+		UserVO userVO = UserBuilder.user().userVo(userId);
+		
+		AuthenticationResponse authResponse = AuthBuilder.auth(userVO).authResponse();		
+		String totpSessionId = RandomGenerator.generateSessionId();
+				
+		Mono<Boolean> expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+				
+		Mono<Object> expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+		
+		// =========================================================================================
+		userId = UUID.randomUUID();
+		userVO = UserBuilder.user().userVo(userId);
+		
+		authResponse = AuthBuilder.auth(userVO).authResponse();
+		
+		Mono<Boolean> resultDelete = redisComponent.deletePojo(totpSessionId);  
+		StepVerifier.create(resultDelete).expectNext(Boolean.TRUE).verifyComplete();
+										
+		expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+						
+		expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+	}
+	
+	/**
+	 * 
+	 */
+	@DisplayName("to test Get And Delete Pojo Value function")
+	@Disabled
+	void verifyGetAndDeletePojoValueWorks() {
+		
+		UUID userId = UUID.randomUUID();
+		UserVO userVO = UserBuilder.user().userVo(userId);
+		
+		AuthenticationResponse authResponse = AuthBuilder.auth(userVO).authResponse();		
+		String totpSessionId = RandomGenerator.generateSessionId();
+				
+		Mono<Boolean> expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+				
+		Mono<Object> expectedAuthMessage = redisComponent.getAndDeletePojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+		
+		expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+		
+		// ====================================================================================
+		userId = UUID.randomUUID();
+		userVO = UserBuilder.user().userVo(userId);
+		
+		authResponse = AuthBuilder.auth(userVO).authResponse();		
+										
+		expectedAuthSave = redisComponent.putPojo(totpSessionId, authResponse); 
+		StepVerifier.create(expectedAuthSave).expectNext(Boolean.TRUE).verifyComplete();
+						
+		expectedAuthMessage = redisComponent.getPojo(totpSessionId);  
+		StepVerifier.create(expectedAuthMessage).expectNext(authResponse).verifyComplete();
+	}
+	
 }

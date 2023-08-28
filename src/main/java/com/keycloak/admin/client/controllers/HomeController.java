@@ -108,7 +108,7 @@ public class HomeController {
 
 		String accessToken = auth.getToken().getTokenValue();
 
-		return restService.checkValidity(accessToken).map(response -> ResponseEntity.ok(response));
+		return restService.getUserInfo(accessToken).map(response -> ResponseEntity.ok(response));
 	}
 
 }
