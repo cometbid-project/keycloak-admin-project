@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
  *
  */
 @Log4j2
-public class GlobalProgrammaticValidator<T> {
+public class GenericProgrammaticValidator<T> {
 
 	private static Validator validator;
 

@@ -15,7 +15,7 @@ import com.keycloak.admin.client.models.UserDetailsUpdateRequest;
 import com.keycloak.admin.client.models.UserVO;
 import com.keycloak.admin.client.oauth.service.it.UserAuthenticationService;
 import com.keycloak.admin.client.oauth.service.it.UserCredentialFinderService;
-import com.keycloak.admin.client.validators.GlobalProgrammaticValidator;
+import com.keycloak.admin.client.validators.GenericProgrammaticValidator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -58,7 +58,7 @@ public class UserAuthenticationHandler {
 
 		final Mono<AuthenticationRequest> monoSigninRequest = r.bodyToMono(AuthenticationRequest.class);
 
-		return monoSigninRequest.flatMap(GlobalProgrammaticValidator::validate)
+		return monoSigninRequest.flatMap(GenericProgrammaticValidator::validate)
 				.flatMap(request -> this.responseCreator.defaultReadResponse(
 						userAuthenticationService.authenticate(request, r.exchange().getRequest()),
 						AuthenticationResponse.class, null, r)).log()
@@ -88,7 +88,7 @@ public class UserAuthenticationHandler {
 		final Mono<UserDetailsUpdateRequest> monoUserDetailsRequest = r.bodyToMono(UserDetailsUpdateRequest.class);
 
 		// log.info("Update User details...");
-		return monoUserDetailsRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(updateRequest -> {
+		return monoUserDetailsRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(updateRequest -> {
 			return authUserMgr.getLoggedInUser(r.exchange())
 					.flatMap(username -> this.responseCreator.defaultReadResponse(
 							userAuthenticationService.updateUserDetails(username, updateRequest), UserVO.class, null,
@@ -123,7 +123,7 @@ public class UserAuthenticationHandler {
 		final Mono<UserDetailsUpdateRequest> monoUserDetailsRequest = r.bodyToMono(UserDetailsUpdateRequest.class);
 
 		// log.info("Update User details...");
-		return monoUserDetailsRequest.flatMap(GlobalProgrammaticValidator::validate)
+		return monoUserDetailsRequest.flatMap(GenericProgrammaticValidator::validate)
 				.flatMap(updateRequest -> this.responseCreator.defaultReadResponse(
 						userAuthenticationService.updateUserById(userId, updateRequest), UserVO.class, null, r));
 	}
@@ -139,7 +139,7 @@ public class UserAuthenticationHandler {
 
 		final Mono<StatusUpdateRequest> monoStatusRequest = r.bodyToMono(StatusUpdateRequest.class);
 
-		return monoStatusRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(updateRequest -> {
+		return monoStatusRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(updateRequest -> {
 			return authUserMgr.getLoggedInUser(r.exchange())
 					.flatMap(username -> userAuthenticationService.updateUserStatus(username, updateRequest).flatMap(
 							message -> this.responseCreator.createSuccessMessageResponse(message, null, null, r)));
@@ -159,7 +159,7 @@ public class UserAuthenticationHandler {
 		String userId = r.pathVariable("id");
 		final Mono<StatusUpdateRequest> monoStatusRequest = r.bodyToMono(StatusUpdateRequest.class);
 
-		return monoStatusRequest.flatMap(GlobalProgrammaticValidator::validate)
+		return monoStatusRequest.flatMap(GenericProgrammaticValidator::validate)
 				.flatMap(updateRequest -> userAuthenticationService.updateUserByIdStatus(userId, updateRequest)
 						.flatMap(message -> this.responseCreator.createSuccessMessageResponse(message, null, null, r)));
 	}
@@ -177,7 +177,7 @@ public class UserAuthenticationHandler {
 		// String id = req.pathVariable("id");
 		final Mono<EmailStatusUpdateRequest> monoEmailStatusUpdate = r.bodyToMono(EmailStatusUpdateRequest.class);
 
-		return monoEmailStatusUpdate.flatMap(GlobalProgrammaticValidator::validate)
+		return monoEmailStatusUpdate.flatMap(GenericProgrammaticValidator::validate)
 				.flatMap(statusUpdate -> userAuthenticationService.updateEmailStatus(statusUpdate)
 						.flatMap(message -> this.responseCreator.createSuccessMessageResponse(message, null, null, r)));
 	}

@@ -18,7 +18,7 @@ import com.keycloak.admin.client.models.SendOtpRequest;
 import com.keycloak.admin.client.models.TotpRequest;
 import com.keycloak.admin.client.oauth.service.it.ActivationTokenService;
 import com.keycloak.admin.client.oauth.service.it.UserAuthenticationService;
-import com.keycloak.admin.client.validators.GlobalProgrammaticValidator;
+import com.keycloak.admin.client.validators.GenericProgrammaticValidator;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -59,7 +59,7 @@ public class TokenManagementHandler {
 
 		final Mono<TotpRequest> validateRequest = r.bodyToMono(TotpRequest.class);
 
-		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requestBody -> {
+		return validateRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(requestBody -> {
 
 			final Mono<AuthenticationResponse> monoAuthResponse = authService.verifyTotpCode(requestBody,
 					r.exchange().getRequest());
@@ -79,7 +79,7 @@ public class TokenManagementHandler {
 
 		final Mono<SendOtpRequest> validateRequest = r.bodyToMono(SendOtpRequest.class);
 
-		return validateRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(requestBody -> {
+		return validateRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(requestBody -> {
 			return authService.sendOtpCode(requestBody, r.exchange().getRequest())
 					.flatMap(msg -> this.responseCreator.createSuccessMessageResponse(msg, null, null, r))
 					.timeout(Duration.ofSeconds(3));

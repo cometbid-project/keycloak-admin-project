@@ -100,16 +100,6 @@ public class ErrorPublisher {
 		return Mono.error(new ResetPasswordTokenValidationException(messageKey, args));
 	}
 
-	// ================================================================================================================
-
-	public static void raiseRuntimeException(String message, Throwable ex) {
-		throw new ApplicationDefinedRuntimeException(message, ex);
-	}
-
-	public static ServiceUnavailableException raiseServiceUnavailableException(String messageKey, Object[] args) {
-		throw new ServiceUnavailableException(messageKey, args);
-	}
-
 	public static <T> Mono<T> raiseUserHasNoAttributesException(Object[] args) {
 		return Mono.error(new UserHasNoAttributesException(args));
 	}
@@ -129,6 +119,37 @@ public class ErrorPublisher {
 	public static <T> Mono<T> raiseUserProfileDisabledException(Object[] args) {
 		return Mono.error(new UserProfileDisabledException(args));
 	}
+	
+	public static <T> Mono<T> raisePasswordUnacceptableException(String messageKey, Object[] args) {
+		return Mono.error(new PasswordNotAcceptableException(messageKey, args));
+	}
+	
+	public static <T> Mono<T> raiseResourceAlreadyExistException(Object[] args) {
+		return Mono.error(new ResourceAlreadyExistException(args));
+	}
+	
+	public static <T> Mono<T> raiseInvalidInputException(String message, 
+			Set<ConstraintViolation<?>> constraintViolations) {
+		//Set<ConstraintViolation<?>> constraintViolations = new HashSet<>();
+
+		return Mono.error(new ConstraintViolationException(message, constraintViolations));
+	}
+	
+	public static <T> Mono<T> raiseBlockedIPAttemptLoginAlert(Object[] args) {
+		return Mono.error(new BlockedCredentialsAttemptsLoginWarning(args));
+	}
+
+
+// ===============================================================================================
+	/*
+	public static void raiseRuntimeException(String message, Throwable ex) {
+		throw new ApplicationDefinedRuntimeException(message, ex);
+	}
+
+	public static ServiceUnavailableException raiseServiceUnavailableException(
+						String messageKey, Object[] args) {
+		throw new ServiceUnavailableException(messageKey, args);
+	}
 
 	public static void raiseResourceNotFoundException(Object[] args) {
 		throw new ResourceNotFoundException(args);
@@ -136,10 +157,6 @@ public class ErrorPublisher {
 
 	public static void raisePasswordUnacceptableException(Object[] args) {
 		throw new PasswordNotAcceptableException(args);
-	}
-
-	public static <T> Mono<T> raisePasswordUnacceptableException(String messageKey, Object[] args) {
-		return Mono.error(new PasswordNotAcceptableException(messageKey, args));
 	}
 
 	public static void raiseBadCredentialsException(String messageKey, Object[] args) {
@@ -181,7 +198,7 @@ public class ErrorPublisher {
 	}
 
 	public static void raiseInvalidJwtTokenException(String messageKey, Object[] args) {
-
 		throw new InvalidJwtTokenException(messageKey, args);
 	}
+	*/
 }

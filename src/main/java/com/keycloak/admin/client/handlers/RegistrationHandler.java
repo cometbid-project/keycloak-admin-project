@@ -24,7 +24,7 @@ import com.keycloak.admin.client.common.utils.ResponseCreator;
 import com.keycloak.admin.client.models.UserRegistrationRequest;
 import com.keycloak.admin.client.models.UserVO;
 import com.keycloak.admin.client.oauth.service.it.UserCredentialService;
-import com.keycloak.admin.client.validators.GlobalProgrammaticValidator;
+import com.keycloak.admin.client.validators.GenericProgrammaticValidator;
 
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;
@@ -53,9 +53,11 @@ public class RegistrationHandler {
 	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> hello(ServerRequest serverRequest) {
-
+		log.info("Saying hello to logged in User...");
+		
 		return serverRequest.principal().map(Principal::getName)
-				.flatMap(username -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+				.flatMap(username -> ServerResponse.ok()
+						//.contentType(MediaType.APPLICATION_JSON)
 						.bodyValue(Collections.singletonMap("message", "Hello " + username + "!")));
 	}
 
@@ -66,10 +68,11 @@ public class RegistrationHandler {
 	@PreAuthorize("isAuthenticated()")
 	@Loggable
 	public Mono<ServerResponse> signupAdmin(ServerRequest r) {
-
+		log.info("Initiating Sign up for Admin user...");
+		
 		final Mono<UserRegistrationRequest> requestBody = r.bodyToMono(UserRegistrationRequest.class);
 
-		return requestBody.flatMap(GlobalProgrammaticValidator::validate)
+		return requestBody.flatMap(GenericProgrammaticValidator::validate)
 
 				.flatMap(userRegRequest -> {
 					final Mono<UserVO> monoResult = userRegistrationService.signupUser(userRegRequest, Role.ROLE_ADMIN,

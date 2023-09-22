@@ -81,7 +81,7 @@ public class ResponseCreator {
 			Map<String, List<String>> headerFields, ServerRequest r) {
 
 		ServerResponse.BodyBuilder responseBuilder = ServerResponse.status(HttpStatus.OK).headers(headers -> {
-			if (!MapUtils.isEmpty(headerFields)) {
+			if (MapUtils.isNotEmpty(headerFields)) {
 				headers.putAll(headerFields);
 			}
 		});
@@ -118,7 +118,7 @@ public class ResponseCreator {
 			Map<String, List<String>> headerFields, URI uri, ServerRequest r) {
 
 		ServerResponse.BodyBuilder responseBuilder = ServerResponse.created(uri).headers(headers -> {
-			if (!MapUtils.isEmpty(headerFields)) {
+			if (MapUtils.isNotEmpty(headerFields)) {
 				headers.putAll(headerFields);
 			}
 		});

@@ -19,7 +19,7 @@ import com.keycloak.admin.client.models.PasswordUpdateRequest;
 import com.keycloak.admin.client.models.ResetPasswordFinalRequest;
 import com.keycloak.admin.client.models.ResetPasswordRequest;
 import com.keycloak.admin.client.oauth.service.it.PasswordMgtService;
-import com.keycloak.admin.client.validators.GlobalProgrammaticValidator;
+import com.keycloak.admin.client.validators.GenericProgrammaticValidator;
 
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;
@@ -54,7 +54,7 @@ public class PasswordManagementHandler {
 		log.info("Initiate Password reset process...");
 		final Mono<ResetPasswordRequest> monoPasswdRequest = r.bodyToMono(ResetPasswordRequest.class);
 
-		return monoPasswdRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(passwdRequest -> {
+		return monoPasswdRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(passwdRequest -> {
 			return passwdService.initiateResetPasswd(passwdRequest, r.exchange().getRequest())
 					.flatMap(message -> this.responseCreator.createAcceptedMessageResponse(message, null, r));
 		});
@@ -117,7 +117,7 @@ public class PasswordManagementHandler {
 		log.info("Username recovery process...");
 		final Mono<ForgotUsernameRequest> monoUsernameRequest = r.bodyToMono(ForgotUsernameRequest.class);
 
-		return monoUsernameRequest.flatMap(GlobalProgrammaticValidator::validate).flatMap(usernameRequest -> {
+		return monoUsernameRequest.flatMap(GenericProgrammaticValidator::validate).flatMap(usernameRequest -> {
 			return passwdService.recoverUsername(usernameRequest, r.exchange().getRequest())
 					.flatMap(message -> this.responseCreator.createAcceptedMessageResponse(message, null, r));
 		});
