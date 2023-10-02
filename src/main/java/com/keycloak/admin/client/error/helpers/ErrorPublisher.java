@@ -141,11 +141,16 @@ public class ErrorPublisher {
 
 
 // ===============================================================================================
-	/*
+	
+	public static void raiseBadRequestException(String messageKey, Object[] args) {
+		throw new BadRequestException(messageKey, args);
+	}
+	
 	public static void raiseRuntimeException(String message, Throwable ex) {
 		throw new ApplicationDefinedRuntimeException(message, ex);
 	}
 
+	/*
 	public static ServiceUnavailableException raiseServiceUnavailableException(
 						String messageKey, Object[] args) {
 		throw new ServiceUnavailableException(messageKey, args);
@@ -185,10 +190,6 @@ public class ErrorPublisher {
 
 	public static void raiseLoginSessionExpiredException(String messageKey, Object[] args) {
 		throw new SessionExpiredException(messageKey, args);
-	}
-
-	public static void raiseBadRequestException(String messageKey, Object[] args) {
-		throw new BadRequestException(messageKey, args);
 	}
 
 	public static InvalidInputException raiseInvalidInputException(String message) {

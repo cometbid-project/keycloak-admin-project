@@ -64,7 +64,7 @@ public class TotpManagerImpl implements TotpManager {
 	 * @Override
 	 */
 	@Override
-	public String generateQrImage(String email, String secret) {
+	public String generateQrImage(String email, String secret) throws RuntimeException {
 		// Generate and store the secret
 		// String secret = secretGenerator.generate();
 		String qrCodeImage = null;
