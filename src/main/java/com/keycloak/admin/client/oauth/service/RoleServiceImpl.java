@@ -305,7 +305,7 @@ public class RoleServiceImpl implements RoleService {
 
 		// final String roleToAdd = roleRequest.getRoleName().toUpperCase();
 		if (realmRoleName.equalsIgnoreCase(localRealmRoleName)) {
-			raiseBadRequestException("role.conflict", new Object[] { localRealmRoleName, realmRoleName });
+			return raiseBadRequestError("role.conflict", new Object[] { localRealmRoleName, realmRoleName });
 		}
 
 		Mono<RoleRepresentation> monoResult = Mono

@@ -7,6 +7,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.http.util.Asserts;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -19,6 +21,7 @@ import org.springframework.web.reactive.function.client.WebClient.ResponseSpec;
 
 import com.keycloak.admin.client.common.utils.ResourceBundleAccessor;
 import com.keycloak.admin.client.error.helpers.ErrorPublisher;
+import com.keycloak.admin.client.exceptions.BadRequestException;
 import com.keycloak.admin.client.oauth.service.it.ReactiveClientInterface;
 
 import static com.keycloak.admin.client.error.handlers.ExceptionHandler.*;
@@ -335,7 +338,8 @@ public class MyReactiveClient implements ReactiveClientInterface {
 	@Override
 	public ResponseSpec doPostOrPutOrPatch(WebClient webClient, @NonNull Map<String, Object> templateVar,
 			@NonNull Object requestBody, @NonNull String path, @NonNull MultiValueMap<String, String> params,
-			Map<String, List<String>> headerFields, List<Cookie> listOfCookies, @NonNull HttpMethod methodType) {
+			Map<String, List<String>> headerFields, List<Cookie> listOfCookies, @NonNull HttpMethod methodType)
+						throws BadRequestException {
 
 		validateMethodType(methodType);
 
@@ -369,7 +373,7 @@ public class MyReactiveClient implements ReactiveClientInterface {
 	public <T> ResponseSpec doPublisherPostOrPutOrPatch(WebClient webClient, @NonNull Map<String, Object> templateVar,
 			@NonNull Mono<T> monoData, Class<? extends T> clazzRequest, @NonNull String path,
 			@NonNull MultiValueMap<String, String> params, Map<String, List<String>> headerFields,
-			List<Cookie> listOfCookies, @NonNull HttpMethod methodType) {
+			List<Cookie> listOfCookies, @NonNull HttpMethod methodType) throws BadRequestException {
 
 		validateMethodType(methodType);
 
@@ -402,7 +406,8 @@ public class MyReactiveClient implements ReactiveClientInterface {
 	@Override
 	public ResponseSpec doFormDataPostOrPut(WebClient webClient, @NonNull Map<String, Object> templateVar,
 			@NonNull MultiValueMap<String, String> formData, @NonNull String path,
-			Map<String, List<String>> headerFields, List<Cookie> listOfCookies, @NonNull HttpMethod methodType) {
+			Map<String, List<String>> headerFields, List<Cookie> listOfCookies, @NonNull HttpMethod methodType)
+					throws BadRequestException {
 
 		validateMethodType(methodType);
 
@@ -436,7 +441,7 @@ public class MyReactiveClient implements ReactiveClientInterface {
 	public ResponseSpec doMultipartPostOrPut(WebClient webClient, @NonNull Map<String, Object> templateVar,
 			@NonNull MultiValueMap<String, HttpEntity<?>> multipart, @NonNull String path,
 			Map<String, List<String>> headerFields, @NonNull List<Cookie> listOfCookies,
-			@NonNull HttpMethod methodType) {
+			@NonNull HttpMethod methodType) throws BadRequestException {
 
 		validateMethodType(methodType);
 
@@ -483,9 +488,11 @@ public class MyReactiveClient implements ReactiveClientInterface {
 	}
 
 	private void validateMethodType(HttpMethod methodType) {
-
-		if (!(methodType.matches("POST") || methodType.matches("PUT") || methodType.matches("PATCH"))) {
+		boolean expression = methodType.matches("POST") || methodType.matches("PUT") || methodType.matches("PATCH");
+		
+		if (!expression) {
 			ErrorPublisher.raiseBadRequestException("invalid.methodType", new Object[] { methodType });
 		}
+
 	}
 }

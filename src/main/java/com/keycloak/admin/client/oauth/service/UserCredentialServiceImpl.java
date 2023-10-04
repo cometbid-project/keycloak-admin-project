@@ -111,8 +111,8 @@ public class UserCredentialServiceImpl implements UserCredentialService {
 								|| throwable instanceof ClientErrorException)
 						.onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
 							log.error("Server error occured...");
-
-							return raiseServiceUnavailableException("user.creation.failed", new Object[] { username });
+							return retrySignal.failure();
+							//return raiseServiceUnavailableError("user.creation.failed", new Object[] { username });
 						}))
 				.doOnSuccess(profile -> {
 					log.info("User {} signup was successful...", profile.getUsername());

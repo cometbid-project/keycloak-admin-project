@@ -30,7 +30,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.User.AuthorityComparator;
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
