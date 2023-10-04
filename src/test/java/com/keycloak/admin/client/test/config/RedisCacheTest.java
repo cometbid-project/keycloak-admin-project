@@ -3,7 +3,7 @@
  */
 package com.keycloak.admin.client.test.config;
 
-import java.nio.charset.Charset;
+
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;

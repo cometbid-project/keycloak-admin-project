@@ -106,7 +106,7 @@ public interface KeycloakOauthClientService {
 	 * 
 	 * @param username
 	 */
-	Mono<String> assignUserClientRole(@NotBlank String userId, @NotBlank String clientId, @NotBlank String roleName);
+	Mono<String> assignUserClientRole(String userId, String clientId, String roleName);
 
 	/**
 	 * 
@@ -297,7 +297,8 @@ public interface KeycloakOauthClientService {
 	 * @param user
 	 * @return
 	 */
-	Mono<String> expireUserPassword(UserRepresentation userRepresentation);     
+	Mono<String> expireUserPassword(UserRepresentation userRepresentation);
+
 
 	/**
 	 * 
