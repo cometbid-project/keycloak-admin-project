@@ -53,7 +53,6 @@ import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositori
 import org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -64,6 +63,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -157,7 +157,7 @@ import reactor.test.StepVerifier;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @EnableAutoConfiguration(exclude = { MongoReactiveAutoConfiguration.class, MongoAutoConfiguration.class,
-		MongoDataAutoConfiguration.class, EmbeddedMongoAutoConfiguration.class,
+		MongoDataAutoConfiguration.class, 
 		MongoReactiveRepositoriesAutoConfiguration.class, MongoRepositoriesAutoConfiguration.class })
 class KeycloakIntegration {
 
@@ -1473,7 +1473,7 @@ class KeycloakIntegration {
 	}
 
 	private static <R> Mono<R> processResponse(ClientResponse clientResponse, Class<? extends R> clazzResponse) {
-		HttpStatus status = clientResponse.statusCode();
+		HttpStatusCode status = clientResponse.statusCode();
 
 		Mono<R> respObj = Mono.empty();
 

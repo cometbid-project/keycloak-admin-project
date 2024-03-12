@@ -5,13 +5,11 @@ package com.keycloak.admin.client.validators;
 
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
-
 import com.keycloak.admin.client.exceptions.CustomConstraintViolationException;
-
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import lombok.extern.log4j.Log4j2;
 import reactor.core.publisher.Mono;
 
@@ -25,7 +23,8 @@ public class GenericProgrammaticValidator<T> {
 	private static Validator validator;
 
 	static {
-		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		ValidatorFactory factory = Validation
+				.buildDefaultValidatorFactory();
 		validator = factory.getValidator();
 	}
 

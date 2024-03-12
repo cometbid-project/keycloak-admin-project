@@ -3,8 +3,8 @@
  */
 package com.keycloak.admin.client.integration.messaging;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.keycloak.admin.client.common.utils.LocaleContextUtils;

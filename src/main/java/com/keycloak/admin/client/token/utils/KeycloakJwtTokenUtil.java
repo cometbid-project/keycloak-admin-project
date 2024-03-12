@@ -5,7 +5,7 @@ package com.keycloak.admin.client.token.utils;
 
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import com.keycloak.admin.client.models.AuthenticationResponse;
 import lombok.extern.log4j.Log4j2;
 import org.keycloak.representations.AccessTokenResponse;

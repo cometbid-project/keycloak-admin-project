@@ -13,14 +13,10 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import lombok.extern.log4j.Log4j2;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.util.IdGenerator;
 import org.springframework.util.JdkIdGenerator;
-import org.springframework.util.ResourceUtils;
 
 import com.keycloak.admin.client.common.utils.YamlPropertySourceFactory;
 import com.maxmind.geoip2.DatabaseReader;

@@ -6,7 +6,7 @@ package com.keycloak.admin.client.error.handlers;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
 
@@ -35,6 +35,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.web.HttpMediaTypeException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -387,9 +388,9 @@ public class GlobalControllerExceptionHandler {
 	 * @return
 	 */
 	@ResponseStatus(UNSUPPORTED_MEDIA_TYPE)
-	@ExceptionHandler({ HttpMessageNotReadableException.class, HttpMediaTypeNotAcceptableException.class,
-			HttpMediaTypeNotSupportedException.class, HttpMessageNotWritableException.class,
-			HttpMediaTypeNotAcceptableException.class })
+	@ExceptionHandler({ HttpMessageNotReadableException.class, HttpMessageNotWritableException.class
+		     //,HttpMediaTypeException.class
+		     })
 	public @ResponseBody AppResponse handleHttpMessageException(ServerHttpRequest request, Exception ex) {
 
 		String message = "Not available";
@@ -397,13 +398,15 @@ public class GlobalControllerExceptionHandler {
 		if (ex instanceof HttpMessageNotReadableException) {
 			message = getErrorMessage(ErrorCode.HTTP_MESSAGE_NOT_READABLE.getErrMsgKey());
 			errorCode = ErrorCode.HTTP_MESSAGE_NOT_READABLE.getErrCode();
-		} else if (ex instanceof HttpMediaTypeNotAcceptableException) {
+		} /*
+		else if (ex instanceof HttpMediaTypeNotAcceptableException) {
 			message = getErrorMessage(ErrorCode.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE.getErrMsgKey());
 			errorCode = ErrorCode.HTTP_MEDIA_TYPE_NOT_ACCEPTABLE.getErrCode();
 		} else if (ex instanceof HttpMediaTypeNotSupportedException) {
 			message = getErrorMessage(ErrorCode.HTTP_MEDIATYPE_NOT_SUPPORTED.getErrMsgKey());
 			errorCode = ErrorCode.HTTP_MEDIATYPE_NOT_SUPPORTED.getErrCode();
-		} else if (ex instanceof HttpMessageNotWritableException) {
+		} */
+		else if (ex instanceof HttpMessageNotWritableException) {
 			message = getErrorMessage(ErrorCode.HTTP_MESSAGE_NOT_WRITABLE.getErrMsgKey());
 			errorCode = ErrorCode.HTTP_MESSAGE_NOT_WRITABLE.getErrCode();
 		}
@@ -427,7 +430,7 @@ public class GlobalControllerExceptionHandler {
 		// return new ApiError(path, httpStatus, message, ex);
 		String traceId = (String) ThreadContext.get(TraceIdFilter.TRACE_ID_KEY);
 
-		return new AppResponse(currentApiVersion, request.getMethodValue(), errorCode, httpStatus, message, path,
+		return new AppResponse(currentApiVersion, request.getMethod().name(), errorCode, httpStatus, message, path,
 				traceId, sendReportUri, moreInfoUrl, ex);
 	}
 
@@ -461,9 +464,9 @@ public class GlobalControllerExceptionHandler {
 			e1.printStackTrace();
 		}
 
-		String traceId = (String) ThreadContext.get(TraceIdFilter.TRACE_ID_KEY);
+		String traceId = ThreadContext.get(TraceIdFilter.TRACE_ID_KEY);
 
-		return new AppResponse(currentApiVersion, request.getMethodValue(), errorCode, status, detailedDesc, path,
+		return new AppResponse(currentApiVersion, request.getMethod().name(), errorCode, status, detailedDesc, path,
 				reason, traceId, sendReportUri, moreInfoUrl);
 	}
 

@@ -471,7 +471,7 @@ class AuthServiceAuthorizationTest {
 		AuthenticationResponse authResponse = authBuilder.authResponse();
 
 		// Assuming maximum failed login attempt is 5
-		when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(authResponse));
+		// when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(authResponse));
 		when(redisCache.saveAsBlockedIp(anyString())).thenReturn(Mono.just(2L));
 		when(redisCache.removeCacheEntry(anyString())).thenReturn(Mono.just(Boolean.TRUE));
 		when(redisCache.isBlockedIp(anyString())).thenReturn(Mono.just(Boolean.FALSE));
@@ -534,7 +534,7 @@ class AuthServiceAuthorizationTest {
 		AuthenticationResponse authResponse = authBuilder.authResponse();
 
 		// Assuming maximum failed login attempt is 5
-		when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(new AuthenticationResponse()));
+		// when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(new AuthenticationResponse()));
 
 		when(redisCache.saveAsBlockedIp(anyString())).thenReturn(Mono.just(2L));
 		when(redisCache.removeCacheEntry(anyString())).thenReturn(Mono.just(Boolean.TRUE));
@@ -590,9 +590,8 @@ class AuthServiceAuthorizationTest {
 		String totpCode = Faker.instance().number().digits(6); // 6 digit code
 
 		// Assuming maximum failed login attempt is 5
-		when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(authResponse));
-		when(redisCache.saveAuthenticationResponse(anyString(), any(AuthenticationResponse.class)))
-				.thenReturn(Mono.just(Boolean.TRUE));
+		// when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(authResponse));
+		// when(redisCache.saveAuthenticationResponse(anyString(), any(AuthenticationResponse.class))).thenReturn(Mono.just(Boolean.TRUE));
 		when(totpManager.generateOtp()).thenReturn(totpCode);
 
 		InetSocketAddress mockInetSocketAddress = Mockito.mock(InetSocketAddress.class);
@@ -654,9 +653,8 @@ class AuthServiceAuthorizationTest {
 		String totpCode = Faker.instance().number().digits(6); // 6 digit code
 
 		// Assuming maximum failed login attempt is 5
-		when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(new AuthenticationResponse()));
-		when(redisCache.saveAuthenticationResponse(anyString(), any(AuthenticationResponse.class)))
-				.thenReturn(Mono.just(Boolean.TRUE));
+		//when(redisCache.getAuthenticationResponse(anyString())).thenReturn(Mono.just(new AuthenticationResponse()));
+		// when(redisCache.saveAuthenticationResponse(anyString(), any(AuthenticationResponse.class))).thenReturn(Mono.just(Boolean.TRUE));
 		when(totpManager.generateOtp()).thenReturn(totpCode);
 
 		InetSocketAddress mockInetSocketAddress = Mockito.mock(InetSocketAddress.class);

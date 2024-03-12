@@ -20,7 +20,6 @@ public class InvalidRequestException extends ApplicationDefinedRuntimeException 
 	 */
 	private static final long serialVersionUID = 6073988945101399813L;
 
-	@Getter
 	private int statusCode;
 
 	public InvalidRequestException() {

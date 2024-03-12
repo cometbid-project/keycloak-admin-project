@@ -6,8 +6,8 @@ package com.keycloak.admin.client.error.helpers;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import com.keycloak.admin.client.exceptions.ApplicationDefinedRuntimeException;
 import com.keycloak.admin.client.exceptions.AuthenticationError;
 import com.keycloak.admin.client.exceptions.BadRequestException;
@@ -130,15 +130,12 @@ public class ErrorPublisher {
 	
 	public static <T> Mono<T> raiseInvalidInputException(String message, 
 			Set<ConstraintViolation<?>> constraintViolations) {
-		//Set<ConstraintViolation<?>> constraintViolations = new HashSet<>();
-
 		return Mono.error(new ConstraintViolationException(message, constraintViolations));
 	}
 	
 	public static <T> Mono<T> raiseBlockedIPAttemptLoginAlert(Object[] args) {
 		return Mono.error(new BlockedCredentialsAttemptsLoginWarning(args));
 	}
-
 
 // ===============================================================================================
 	

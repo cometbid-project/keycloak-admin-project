@@ -5,9 +5,6 @@ package com.keycloak.admin.client.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.keycloak.admin.client.common.enums.SocialProvider;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.experimental.Accessors;
 
@@ -30,7 +27,6 @@ public class SocialLink {
 	 */
 	@JsonCreator
 	public SocialLink(String providerUserId, SocialProvider socialProvider) {
-		// TODO Auto-generated constructor stub
 		super();
 		this.providerUserId = providerUserId;
 		this.socialProvider = socialProvider;

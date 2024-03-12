@@ -9,9 +9,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.env.Environment;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -127,9 +127,9 @@ public class CommonUtil {
 
 	private Mono<String> generateToken() {
 
-		Mono<String> generatedToken = Mono.fromSupplier(() -> RandomGenerator.generateNewToken());
+		Mono<String> generatedToken = Mono.fromSupplier(RandomGenerator::generateNewToken);
 
-		return generatedToken.flatMap(newToken -> taken(newToken)).repeatWhenEmpty(Repeat.times(5));
+		return generatedToken.flatMap(this::taken).repeatWhenEmpty(Repeat.times(5));
 	}
 
 	private Mono<String> taken(String newToken) {

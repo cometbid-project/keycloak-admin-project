@@ -47,9 +47,8 @@ public class DateUtil {
 		}
 		try {
 
-			LocalDateTime dateTime = LocalDateTime.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME);
+			return LocalDateTime.parse(dateStr, DateTimeFormatter.ISO_DATE_TIME);
 
-			return dateTime;
 		} catch (DateTimeParseException ex) {
 			ex.printStackTrace();
 			return null;

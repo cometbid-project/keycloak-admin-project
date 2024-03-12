@@ -20,7 +20,6 @@ public class ResourceNotFoundException extends ApplicationDefinedRuntimeExceptio
 	 */
 	private static final long serialVersionUID = -6618023139439658341L;
 
-	@Getter
 	private int statusCode;
 
 	private static final HttpStatus STATUS = HttpStatus.NOT_FOUND;

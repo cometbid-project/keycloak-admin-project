@@ -55,13 +55,14 @@ public class KeycloakConfig {
 	@Bean
 	public Keycloak keycloakAdminClientFactory(@Qualifier("keycloakClient-ExecutorService") 
 											ExecutorService executorService) throws Exception {
+		
 		String clientId = keycloakProperties.getAdminClientId();
 		String clientSecret = keycloakProperties.getAdminClientSecret();
 		String serverUrl = keycloakProperties.getBaseUrl();
 		String realm = keycloakProperties.getAppRealm();
 
 		// Get keycloak client
-		Keycloak keycloak = KeycloakBuilder.builder()
+		return KeycloakBuilder.builder()
 				//
 				.serverUrl(serverUrl)
 				//
@@ -77,7 +78,7 @@ public class KeycloakConfig {
 				//
 				.build();
 
-		return keycloak;
+		//return keycloak;
 	}
 
 	private ResteasyClient resteasyClient(ExecutorService executorService) throws Exception {

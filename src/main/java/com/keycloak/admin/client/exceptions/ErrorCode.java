@@ -11,10 +11,13 @@ package com.keycloak.admin.client.exceptions;
  */
 public enum ErrorCode {
 
-	SYS_DEFINED_ERR_CODE("SYSTEM-ERR", "sys.def.error"), APP_DEFINED_ERR_CODE("APP-DEF-001", "app.def.error"),
-	AUTHENTICATION_ERR_CODE("AUTH-ERR-001", "auth.error"), BAD_REQUEST_ERR_CODE("BAD-REQ-001", "bad.req.error"),
+	SYS_DEFINED_ERR_CODE("SYSTEM-ERR", "sys.def.error"), 
+	APP_DEFINED_ERR_CODE("APP-DEF-001", "app.def.error"),
+	AUTHENTICATION_ERR_CODE("AUTH-ERR-001", "auth.error"), 
+	BAD_REQUEST_ERR_CODE("BAD-REQ-001", "bad.req.error"),
 	CONSTRAINT_VIOLATION_ERR_CODE("INV-DATA-001", "data.val.error"),
-	EVENT_PROCESSING_ERR_CODE("EVENT-001", "event.error"), IMAGE_CONVERSION_ERR_CODE("IMG-CONV-001", "img.con.error"),
+	EVENT_PROCESSING_ERR_CODE("EVENT-001", "event.error"), 
+	IMAGE_CONVERSION_ERR_CODE("IMG-CONV-001", "img.con.error"),
 	INVALID_PARAMETER_ERR_CODE("INV-PARAM-001", "inv.params.error"),
 	INVALID_INPUT_ERR_CODE("INV-INPUT-001", "inv.input.error"),
 	MAX_LOGIN_ATTEMPT_ERR_CODE("MAX-LOGIN-ATT-001", "login.attempt.error"),
@@ -39,7 +42,8 @@ public enum ErrorCode {
 	MERCHANT_EXIST_ERR_CODE("M-EXIST-001", "merchant.exist.err"),
 	MERCHANT_NOT_FOUND_ERR_CODE("M-NF-001", "merchant.not.found"),
 	ACCOUNT_NOT_FOUND_ERR_CODE("ACCT-NF-001", "account.not.found"),
-	USER_EXIST_ERR_CODE("USR-EXIST-001", "user.exist.err"), USER_NOT_FOUND_ERR_CODE("USR-NF-001", "user.not.found"),
+	USER_EXIST_ERR_CODE("USR-EXIST-001", "user.exist.err"), 
+	USER_NOT_FOUND_ERR_CODE("USR-NF-001", "user.not.found"),
 	EXPIRED_PROFILE_ERR_CODE("USR-EXP-001", "profile.expired"),
 	NOATTRIBUTES_PROFILE_ERR_CODE("USR-NOATTR-001", "profile.noattr"),
 	LOCKED_PROFILE_ERR_CODE("USR-LOCK-001", "profile.locked"),

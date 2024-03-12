@@ -67,7 +67,7 @@ public abstract class AbstractValidationHandler<T, U extends Validator> {
 	}
 
 	protected Mono<ServerResponse> onValidationErrors(Errors errors, T invalidBody, final ServerRequest request) {
-		final String httpMethod = request.exchange().getRequest().getMethodValue();
+		final String httpMethod = request.exchange().getRequest().getMethod().name();
 
 		ApiError customError = new ApiError(request.path(), httpMethod,
 				ErrorCode.CONSTRAINT_VIOLATION_ERR_CODE.getErrCode(), HttpStatus.UNPROCESSABLE_ENTITY,

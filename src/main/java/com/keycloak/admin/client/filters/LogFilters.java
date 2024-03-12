@@ -39,7 +39,7 @@ public class LogFilters {
 		return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
 			if (log.isDebugEnabled()) {
 				StringBuilder sb = new StringBuilder("Response: \n").append("Status: ")
-						.append(clientResponse.rawStatusCode());
+						.append(clientResponse.statusCode());
 				
 				clientResponse.headers().asHttpHeaders().forEach((key, value1) -> value1
 						.forEach(value -> sb.append("\n").append(key).append(":").append(value)));

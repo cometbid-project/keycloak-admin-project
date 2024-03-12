@@ -3,7 +3,7 @@
  */
 package com.keycloak.admin.client.oauth.service.it;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import com.keycloak.admin.client.models.CreateRoleRequest;
 import com.keycloak.admin.client.models.RoleVO;

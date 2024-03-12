@@ -9,8 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.admin.client.Keycloak;
@@ -524,8 +524,8 @@ public class RoleServiceImpl implements RoleService {
 								ex));
 	}
 
-	private ClientResource getClientResource(String clientId) {
-		return this.realmResource().clients().get(clientId);
+	private ClientResource getClientResource(String uuid) {
+		return this.realmResource().clients().get(uuid);
 	}
 
 	private RolesResource getRolesResource() {

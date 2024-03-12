@@ -62,7 +62,7 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.relaxedRequestParameters;
+//import static org.springframework.restdocs.request.RequestDocumentation.relaxedRequestParameters;
 import static org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.document;
 import static org.springframework.restdocs.webtestclient.WebTestClientRestDocumentation.documentationConfiguration;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
@@ -152,11 +152,13 @@ class RoleApiAuthenticationTest {
 					),
 					responseHeaders(
 								headerWithName("Content-Type")
-								  .description("The Content-Type of the response payload, e.g. `application/json`")),
+								  .description("The Content-Type of the response payload, e.g. `application/json`"))
+					/*
 					relaxedRequestParameters( 
 							parameterWithName("lang")
 							.description("To instruct the resource to use a language of choice in"
 									+ " the response messages. en=English, fr=French etc"))
+					*/
 			));
 	    }
 
@@ -201,11 +203,13 @@ class RoleApiAuthenticationTest {
 					),
 					responseHeaders(
 								headerWithName("Content-Type")
-								  .description("The Content-Type of the response payload, e.g. `application/json`")),
+								  .description("The Content-Type of the response payload, e.g. `application/json`"))
+					/*
 					relaxedRequestParameters( 
 							parameterWithName("lang")
 							.description("To instruct the resource to use a language of choice in"
 									+ " the response messages. en=English, fr=French etc"))
+									*/
 			));
 	    }
 
@@ -251,11 +255,13 @@ class RoleApiAuthenticationTest {
 					),
 					responseHeaders(
 								headerWithName("Content-Type")
-								  .description("The Content-Type of the response payload, e.g. `application/json`")),
+								  .description("The Content-Type of the response payload, e.g. `application/json`"))
+					/*
 					relaxedRequestParameters( 
 							parameterWithName("lang")
 							.description("To instruct the resource to use a language of choice in"
 									+ " the response messages. en=English, fr=French etc"))
+									*/
 		       ));
 	    	}
 			
@@ -303,11 +309,13 @@ class RoleApiAuthenticationTest {
 						),
 						responseHeaders(
 									headerWithName("Content-Type")
-									  .description("The Content-Type of the response payload, e.g. `application/json`")),
+									  .description("The Content-Type of the response payload, e.g. `application/json`"))
+						/*
 						relaxedRequestParameters( 
 								parameterWithName("lang")
 								.description("To instruct the resource to use a language of choice in"
 										+ " the response messages. en=English, fr=French etc"))
+										*/
 				));				
 		}
 		

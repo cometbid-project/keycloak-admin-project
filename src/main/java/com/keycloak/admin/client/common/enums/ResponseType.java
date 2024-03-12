@@ -34,7 +34,7 @@ public enum ResponseType {
 	}
 
 	// Implementing a fromString method on an enum type
-	private static final Map<String, ResponseType> stringToEnum = new HashMap<String, ResponseType>();
+	private static final Map<String, ResponseType> stringToEnum = new HashMap<>();
 
 	static { // Initialize map from constant name to enum constant
 		for (ResponseType op : values()) {

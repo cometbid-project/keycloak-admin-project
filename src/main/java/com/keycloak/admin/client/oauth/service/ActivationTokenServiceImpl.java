@@ -39,8 +39,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import static com.keycloak.admin.client.error.handlers.ExceptionHandler.*;
 import lombok.extern.log4j.Log4j2;

@@ -3,7 +3,7 @@
  */
 package com.keycloak.admin.client.models;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import org.apache.commons.lang3.StringUtils;
 

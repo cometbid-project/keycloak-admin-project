@@ -3,7 +3,10 @@
  */
 package com.keycloak.admin.client.config.keycloak;
 
-import java.util.Collection;  
+import static java.util.Collections.emptyList;
+
+import java.util.Collection;
+import java.util.Optional;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -19,25 +22,30 @@ import reactor.core.publisher.Mono;
 /**
  * @author Gbenga
  *
- *@see org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter
+ * @see org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter
  */
-public final class ReactiveKeycloakJwtAuthenticationConverter implements Converter<Jwt, Mono<AbstractAuthenticationToken>> {
+public final class ReactiveKeycloakJwtAuthenticationConverter
+		implements Converter<Jwt, Mono<AbstractAuthenticationToken>> {
 
 	private static final String USERNAME_CLAIM = "preferred_username";
 	private final Converter<Jwt, Flux<GrantedAuthority>> jwtGrantedAuthoritiesConverter;
 
-	public ReactiveKeycloakJwtAuthenticationConverter(Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter) {
+	public ReactiveKeycloakJwtAuthenticationConverter(
+			Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter) {
 		Assert.notNull(jwtGrantedAuthoritiesConverter, "jwtGrantedAuthoritiesConverter cannot be null");
+
 		this.jwtGrantedAuthoritiesConverter = new ReactiveJwtGrantedAuthoritiesConverterAdapter(
-			jwtGrantedAuthoritiesConverter);
+				jwtGrantedAuthoritiesConverter);
 	}
 
 	@Override
 	public Mono<AbstractAuthenticationToken> convert(Jwt jwt) {
-		// @formatter:off
-		return this.jwtGrantedAuthoritiesConverter.convert(jwt)
+		// @formatter:off	
+		Optional<Flux<GrantedAuthority>> optionalResult = Optional.ofNullable(this.jwtGrantedAuthoritiesConverter.convert(jwt));
+		
+		return optionalResult.orElse(Flux.empty())
 				.collectList()
-				.map((authorities) -> new JwtAuthenticationToken(jwt, authorities, extractUsername(jwt)));
+				.map(authorities -> new JwtAuthenticationToken(jwt, authorities, extractUsername(jwt)));
 		// @formatter:on
 	}
 

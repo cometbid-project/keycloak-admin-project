@@ -9,10 +9,11 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
 import com.keycloak.admin.client.validators.qualifiers.ValidDate;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  *

@@ -22,7 +22,7 @@ import java.security.Principal;
 import java.time.Duration;
 import java.util.Map;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import com.keycloak.admin.client.aop.qualifiers.Loggable;
 import com.keycloak.admin.client.common.utils.ResponseCreator;

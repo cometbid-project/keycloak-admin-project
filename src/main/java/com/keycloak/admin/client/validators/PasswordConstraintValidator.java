@@ -5,9 +5,6 @@ package com.keycloak.admin.client.validators;
 
 import java.util.Arrays;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
 import org.apache.commons.lang3.StringUtils;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
@@ -19,6 +16,9 @@ import org.passay.WhitespaceRule;
 
 import com.keycloak.admin.client.common.enums.SpecialCharacterData;
 import com.keycloak.admin.client.validators.qualifiers.ValidPassword;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 
 /**

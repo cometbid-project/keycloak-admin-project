@@ -5,8 +5,8 @@ package com.keycloak.admin.client.models;
 
 import java.io.Serializable;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 //import com.cometbid.oauth2.demo.validators.qualifiers.ValidEmail;

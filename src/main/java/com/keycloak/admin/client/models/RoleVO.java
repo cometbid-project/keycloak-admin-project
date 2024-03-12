@@ -6,8 +6,8 @@ package com.keycloak.admin.client.models;
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collections;
 import java.util.HashMap;

@@ -16,9 +16,9 @@ import static com.keycloak.admin.client.error.helpers.ErrorPublisher.*;
 
 import java.util.Arrays;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -71,6 +71,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	private final KeycloakOauthClientService oauthClient;
 	private final KeycloakRestService keycloakRestService;
 	private final GatewayRedisCache redisCache;
+	private final AuthServiceRedisCache authServiceRedisCache;
 	private final AuthProfile dataStore;
 	private final ApplicationEventPublisher eventPublisher;
 	private final TotpManager totpManager;
@@ -81,7 +82,8 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	 * @param keycloakClient
 	 */
 	public UserAuthenticationServiceImpl(@Qualifier("keycloak-client") KeycloakOauthClientService oauthClient,
-			AuthProfile dataStore, GatewayRedisCache redisCache, ApplicationEventPublisher eventPublisher,
+			AuthProfile dataStore, AuthServiceRedisCache authServiceRedisCache, GatewayRedisCache redisCache, 
+			ApplicationEventPublisher eventPublisher,
 			KeycloakRestService keycloakRestService, @Qualifier("TotpManager") TotpManager totpManager,
 			UserLocationService userLocationService, CustomMessageSourceAccessor i8nMessageAccessor, Parser parser) {
 
@@ -89,6 +91,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		this.oauthClient = oauthClient;
 		this.keycloakRestService = keycloakRestService;
 		this.redisCache = redisCache;
+		this.authServiceRedisCache = authServiceRedisCache;
 		this.dataStore = dataStore;
 		this.eventPublisher = eventPublisher;
 		this.totpManager = totpManager;
@@ -246,7 +249,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
 		String totpSessionId = totpRequest.getTotpSessionId();
 
-		Mono<AuthenticationResponse> monoResult = redisCache.getAuthenticationResponse(totpSessionId);
+		Mono<AuthenticationResponse> monoResult = this.authServiceRedisCache.getAuthenticationResponse(totpSessionId);
 
 		return monoResult.flatMap(authResponse -> this.doTotpValidation(authResponse, totpRequest, httpRequest))
 				.doOnError(ex -> log.error("Error occured while validating Totp code for user", ex))
@@ -322,7 +325,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		String otpSessionId = otpRequest.getOtpSessionId();
 		String emailOnly = otpRequest.getMode();
 
-		Mono<AuthenticationResponse> monoResult = redisCache.getAuthenticationResponse(otpSessionId);
+		Mono<AuthenticationResponse> monoResult = this.authServiceRedisCache.getAuthenticationResponse(otpSessionId);
 
 		return monoResult.flatMap(authResponse -> {
 			String username = authResponse.getUsername();
@@ -350,7 +353,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		log.warn("Cloned Authentication Response {}", clonedAuthResp);
 
 		// redisCache.removeCacheEntry(otpSessionId);
-		return redisCache.saveAuthenticationResponse(newOtpSessionId, clonedAuthResp).doOnSuccess(c -> {
+		return this.authServiceRedisCache.saveAuthenticationResponse(newOtpSessionId, clonedAuthResp).doOnSuccess(c -> {
 
 			Mono<? extends LoginLocation> userRelativeLoc = userLocationService.decodeUserLocation(httpRequest);
 

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.data.redis.core.ReactiveListOperations;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
@@ -30,16 +30,16 @@ import reactor.core.publisher.Mono;
  */
 @Log4j2
 @Service("redis")
-public class ReactiveRedisComponent {
+public class ReactiveRedisComponent<T> {
 
-	private final ReactiveRedisOperations<String, Object> redisOperations;
+	private final ReactiveRedisOperations<String, T> redisOperations;
 	//private final ReactiveStringRedisTemplate redisListTemplate;
 	private ReactiveRedisOperations<String, String> redisListTemplate;
 
 	// private ReactiveValueOperations<String, Object> reactiveValueOps;
 	// private ReactiveListOperations<String, String> reactiveListOps;
 
-	public ReactiveRedisComponent(ReactiveRedisOperations<String, Object> redisOperations,
+	public ReactiveRedisComponent(ReactiveRedisOperations<String, T> redisOperations,
 			ReactiveRedisOperations<String, String> redisListTemplate) {
 		this.redisOperations = redisOperations;
 		this.redisListTemplate = redisListTemplate;
@@ -377,7 +377,7 @@ public class ReactiveRedisComponent {
 	 * @param list
 	 * @return
 	 */
-	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull Object pojo) {
+	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull T pojo) {
 
 		Mono<Boolean> lPush = redisOperations.opsForValue().setIfAbsent(key, pojo)
 				.log(String.format("Key(%s) entry Pushed", key));
@@ -391,7 +391,7 @@ public class ReactiveRedisComponent {
 	 * @param list
 	 * @return
 	 */
-	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull Object pojo, long timeoutInSecs) {
+	public Mono<Boolean> putIfAbsent(@NonNull String key, @NonNull T pojo, long timeoutInSecs) {
 
 		Mono<Boolean> lPush = redisOperations.opsForValue().setIfAbsent(key, pojo, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Key(%s) entry Pushed %d sec timeout", key, timeoutInSecs));
@@ -406,7 +406,7 @@ public class ReactiveRedisComponent {
 	 * @param timeoutInSecs
 	 * @return
 	 */
-	public Mono<Boolean> putPojo(@NonNull String key, @NonNull Object pojo) {
+	public Mono<Boolean> putPojo(@NonNull String key, @NonNull T pojo) {
 		Mono<Boolean> lPush = redisOperations.opsForValue().set(key, pojo)
 				.log(String.format("Key(%s) entry Pushed", key));
 		return lPush;
@@ -420,7 +420,7 @@ public class ReactiveRedisComponent {
 	 * @param timeoutInSecs
 	 * @return
 	 */
-	public Mono<Boolean> putPojo(@NonNull String key, @NonNull Object pojo, long timeoutInSecs) {
+	public Mono<Boolean> putPojo(@NonNull String key, @NonNull T pojo, long timeoutInSecs) {
 		Mono<Boolean> lPush = redisOperations.opsForValue().set(key, pojo, Duration.ofSeconds(timeoutInSecs))
 				.log(String.format("Key(%s) entry Pushed with %d sec timeout", key, timeoutInSecs));
 		return lPush;
@@ -433,7 +433,7 @@ public class ReactiveRedisComponent {
 	 * @param multiPojo
 	 * @return
 	 */
-	public Mono<Boolean> putMultiPojo(@NonNull Map<String, Object> multiKeyValues) {
+	public Mono<Boolean> putMultiPojo(@NonNull Map<String, T> multiKeyValues) {
 		Mono<Boolean> lPush = redisOperations.opsForValue().multiSet(multiKeyValues)
 				.log(String.format("Key(%s) entries Pushed", multiKeyValues.keySet()));
 		return lPush;
@@ -445,9 +445,9 @@ public class ReactiveRedisComponent {
 	 * @param key
 	 * @return
 	 */
-	public Mono<Object> getPojo(@NonNull String key) {
+	public Mono<T> getPojo(@NonNull String key) {
 
-		Mono<Object> lPop = redisOperations.opsForValue().get(key).log(String.format("Key(%s) entry Retrieved", key));
+		Mono<T> lPop = redisOperations.opsForValue().get(key).log(String.format("Key(%s) entry Retrieved", key));
 		return lPop;
 	}
 
@@ -457,9 +457,9 @@ public class ReactiveRedisComponent {
 	 * @param multikeys
 	 * @return
 	 */
-	public Mono<List<Object>> getMultiPojo(@NonNull Collection<String> multikeys) {
+	public Mono<List<T>> getMultiPojo(@NonNull Collection<String> multikeys) {
 
-		Mono<List<Object>> lPush = redisOperations.opsForValue().multiGet(multikeys)
+		Mono<List<T>> lPush = redisOperations.opsForValue().multiGet(multikeys)
 				.log(String.format("Key(%s) entries Retrieved", multikeys));
 		return lPush;
 	}
@@ -471,9 +471,9 @@ public class ReactiveRedisComponent {
 	 * @param pojo
 	 * @return
 	 */
-	public Mono<Object> replacePojo(@NonNull String key, @NonNull Object pojo) {
+	public Mono<T> replacePojo(@NonNull String key, @NonNull T pojo) {
 
-		Mono<Object> lPop = redisOperations.opsForValue().getAndSet(key, pojo)
+		Mono<T> lPop = redisOperations.opsForValue().getAndSet(key, pojo)
 				.log(String.format("Old Key(%s) entry Retrieved and new entry Saved", key));
 		return lPop;
 	}
@@ -497,9 +497,9 @@ public class ReactiveRedisComponent {
 	 * @param key
 	 * @return
 	 */
-	public Mono<Object> getAndDeletePojo(@NonNull String key) {
+	public Mono<T> getAndDeletePojo(@NonNull String key) {
 
-		Mono<Object> lPop = redisOperations.opsForValue().getAndDelete(key).log(String.format("Key(%s) entry Deleted", key)); 
+		Mono<T> lPop = redisOperations.opsForValue().getAndDelete(key).log(String.format("Key(%s) entry Deleted", key)); 
 		return lPop;
 	}
 

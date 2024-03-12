@@ -9,9 +9,9 @@ package com.keycloak.admin.client.validators.qualifiers;
  */
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 

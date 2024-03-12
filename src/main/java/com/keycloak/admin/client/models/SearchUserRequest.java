@@ -3,7 +3,7 @@
  */
 package com.keycloak.admin.client.models;
 
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 
 import org.springframework.web.bind.annotation.RequestParam;
 

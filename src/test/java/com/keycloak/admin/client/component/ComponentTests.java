@@ -3,6 +3,8 @@
  */
 package com.keycloak.admin.client.component;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +36,7 @@ public class ComponentTests {
     @BeforeAll
     void initStubs() {
     	
-        WireMock.stubFor(post("/downstream/system")
+        WireMock.stubFor(post("/downstream/system").
             .willReturn(aResponse()
                 .withStatus(200)
                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)

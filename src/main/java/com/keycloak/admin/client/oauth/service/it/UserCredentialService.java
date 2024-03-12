@@ -7,7 +7,7 @@ package com.keycloak.admin.client.oauth.service.it;
 
 import java.util.Map;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;

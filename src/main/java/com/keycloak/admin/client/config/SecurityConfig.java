@@ -14,6 +14,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -35,35 +36,40 @@ import reactor.core.publisher.Mono;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfig implements WebFluxConfigurer {
-	
-	private static String[] publicPostPath = {"/api/v1/users", "/api/v1/signin", 
-											  "/api/v1/password", "/api/v1/username", "/api/v1/totp"};
-	private static String[] publicPutPath = {"/api/v1/password", "/api/v1/email/activation", "/api/v1/totp"};
-	private static String[] publicPatchPath = {"/api/v1/access-token/**"};
-	private static String[] publicGetPath = {"/api/v1/password/token-validation", "/api/v1/email/activation"};
-	
+
+	private static String[] publicPostPath = { "/api/v1/users", "/api/v1/signin", "/api/v1/password",
+			"/api/v1/username", "/api/v1/totp" };
+	private static String[] publicPutPath = { "/api/v1/password", "/api/v1/email/activation", "/api/v1/totp" };
+	private static String[] publicPatchPath = { "/api/v1/access-token/**" };
+	private static String[] publicGetPath = { "/api/v1/password/token-validation", "/api/v1/email/activation" };
+
 	/*
+	 * @Bean public PasswordEncoder passwordEncoder() { return new
+	 * Argon2PasswordEncoder(16, 32, 8, 1 << 16, 10); }
+	 */
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
-		return new Argon2PasswordEncoder(16, 32, 8, 1 << 16, 10);
+		// with new spring security 5
+		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+	/*
+	@Bean
+	public SecurityWebFilterChain securitygWebFilterChain(ServerHttpSecurity http) {
+		return http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 	}
 	*/
-	
-	@Bean
-    public PasswordEncoder passwordEncoder() {
-		// with new spring security 5
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); 
-    }
 
 	/**
 	 * 
 	 * @param http
 	 * @return
 	 */
-	 @Bean
-	 public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, 
-			 Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter) {
-		 
+	@Bean
+	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http,
+			Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter) {
+
 		// @formatter:off 
 		 http.csrf()
          .disable()
@@ -92,51 +98,42 @@ public class SecurityConfig implements WebFluxConfigurer {
 	            //.formLogin(withDefaults())
 	            //.redirectToHttps();
 	     // @formatter:on
-	        
-	     return http.build();
-	 }
-	 
-	 /*
-	 @Bean
-	 SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http) throws Exception {
-			return http
-				.authorizeExchange()
-					.pathMatchers(HttpMethod.GET, "/posts/**").permitAll()
-					.pathMatchers("/login", "/register", "/home").permitAll()
-	                .pathMatchers(HttpMethod.DELETE, "/posts/**").hasRole("ADMIN")
-					.anyExchange().authenticated()
-					.and()
-				.build();
-	 }
+
+		return http.build();
+	}
+
+	/*
+	 * @Bean SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http)
+	 * throws Exception { return http .authorizeExchange()
+	 * .pathMatchers(HttpMethod.GET, "/posts/**").permitAll()
+	 * .pathMatchers("/login", "/register", "/home").permitAll()
+	 * .pathMatchers(HttpMethod.DELETE, "/posts/**").hasRole("ADMIN")
+	 * .anyExchange().authenticated() .and() .build(); }
 	 */
 
-	 /**
-	  * 
-	  * @return
-	  */
+	/**
+	 * 
+	 * @return
+	 */
 	@Bean
 	CorsWebFilter corsWebFilter() {
-		
+
 		return new CorsWebFilter(corsConfigurationSource());
 	}
-	
+
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("*"));
 		// configuration.setAllowedOrigins(List.of("http://localhost:8080"));
-		configuration.setAllowedMethods(List.of(
-                HttpMethod.GET.name(),
-                HttpMethod.PUT.name(),
-                HttpMethod.POST.name(),
-                HttpMethod.DELETE.name()
-        ));
+		configuration.setAllowedMethods(List.of(HttpMethod.GET.name(), HttpMethod.PUT.name(), HttpMethod.POST.name(),
+				HttpMethod.DELETE.name()));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
-		//configuration.setAllowedHeaders(List.of("X-USER-ID"));
+		// configuration.setAllowedHeaders(List.of("X-USER-ID"));
 		configuration.setMaxAge(8000L);
 		configuration.setAllowCredentials(true);
-				
+
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration.applyPermitDefaultValues());
-        return source;
-    }
+		return source;
+	}
 }

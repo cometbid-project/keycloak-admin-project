@@ -67,7 +67,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import javax.ws.rs.core.Response;
 
 /**
@@ -85,12 +85,12 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	private final CustomMessageSourceAccessor i8nMessageAccessor;
 	private final AuthProfile dataStore;
 	private final AuthProperties authProperties;
-	private final GatewayRedisCache redisCacheUtil;
+	private final AuthServiceRedisCache redisCacheUtil;
 	private final Keycloak keycloak;
 
 	public KeycloakOauthClient(Keycloak keycloak, AuthProperties authProperties,
 			CustomMessageSourceAccessor i8nMessageAccessor, @Qualifier("TotpManager") TotpManager totpManager,
-			GatewayRedisCache redisCacheUtil, KeycloakRestService keycloakService, PasswordEncoder passwordEncoder,
+			AuthServiceRedisCache redisCacheUtil, KeycloakRestService keycloakService, PasswordEncoder passwordEncoder,
 			AuthProfile dataStore) {
 
 		this.passwordEncoder = passwordEncoder;
@@ -178,6 +178,8 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param username
 	 * @param targetClientId
 	 * @return
+	 * 
+	 * Will come to this later
 	 */
 	@Override
 	public Mono<AuthenticationResponse> generateToken(final String username, final String targetClientId) {
@@ -188,7 +190,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		log.info("Admin Client id {}", startingClientId);
 		log.info("Admin Client Secret {}", startingClientSecret);
 
-		return this.getAdminClientToken(username).flatMap(accessToken -> keycloakService
+		return this.getAdminClientToken().flatMap(accessToken -> keycloakService
 				.doTokenExchange(accessToken, startingClientId, startingClientSecret, username, targetClientId)
 				.map(tokenGen -> KeycloakJwtTokenUtil.generateLoginResponse(tokenGen, new ArrayList<>(), username)));
 
@@ -199,7 +201,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 * @param authRequest
 	 * @return
 	 */
-	private Mono<String> getAdminClientToken(String username) {
+	private Mono<String> getAdminClientToken() {
 
 		return Mono.fromCallable(() -> this.keycloak.tokenManager().getAccessTokenString())
 				.switchIfEmpty(raiseBadCredentials("invalid.credentials", new Object[] {}));
@@ -226,7 +228,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 		String email = searchFields.getEmail();
 		boolean emailVerified = searchFields.isEmailVerified();
 
-		// Mono<List<UserRepresentation>> emptyUserList = Mono.just(new ArrayList<>());
 		// Create the user resource
 		return Mono
 				.fromCallable(() -> this.realmResource().users().search(username, firstName, lastName, email,
@@ -242,7 +243,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	@Override
 	public Mono<List<UserRepresentation>> findUsersWithVerifiedEmails(boolean emailVerified,
 			final PagingModel pageModel) {
-		// String appRealm = authProperties.getAppRealm();
 
 		int pageNo = pageModel.getPageNo();
 		int pageSize = pageModel.getPageSize();
@@ -263,7 +263,6 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 	 */
 	@Override
 	public Mono<List<UserRepresentation>> findAllUsers(final PagingModel pageModel) {
-		// String appRealm = authProperties.getAppRealm();
 
 		int pageNo = pageModel.getPageNo();
 		int pageSize = pageModel.getPageSize();
@@ -329,9 +328,8 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 			log.info("UserRep username: {}", p.getUsername());
 			log.info("UserRep roles: {}", p.getRealmRoles());
 
-			List<String> roles = p.getRealmRoles() == null ? new ArrayList<>() : p.getRealmRoles();
-			return roles;
-		});// .flatMapMany(Flux::fromIterable);
+			return p.getRealmRoles() == null ? new ArrayList<>() : p.getRealmRoles();
+		});
 	}
 
 	/**
@@ -364,8 +362,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 			log.info("UserRep username: {}", p.getUsername());
 			log.info("UserRep roles: {}", p.getClientRoles());
 
-			Map<String, List<String>> roles = p.getClientRoles() == null ? new HashMap<>() : p.getClientRoles();
-			return roles;
+			return p.getClientRoles() == null ? new HashMap<>() : p.getClientRoles();
 		});
 	}
 
@@ -498,7 +495,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 	private void addNewPasswordToHistory(UserRepresentation userRepresentation, String newPlainPassword) {
 
-		final int maxAllowedPasswordHistory = (int) dataStore.getMaximumPasswordHistory();
+		final int maxAllowedPasswordHistory = dataStore.getMaximumPasswordHistory();
 
 		Set<String> pastCredentials = userRepresentation.getDisableableCredentialTypes();
 		if (pastCredentials == null) {
@@ -594,7 +591,7 @@ public class KeycloakOauthClient implements KeycloakOauthClientService {
 
 			log.info("Response: {} {}", response.getStatus(), response.getStatusInfo());
 			return response;
-		}).map(response -> getCreatedUserId(response));
+		}).map(this::getCreatedUserId);
 	}
 
 	private String enableMFA(UserRepresentation newUser) {

@@ -8,7 +8,7 @@ import static com.keycloak.admin.client.common.activity.ActivityLog.*;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 import org.hibernate.validator.constraints.Length;
 import org.springframework.data.mongodb.core.mapping.Field;

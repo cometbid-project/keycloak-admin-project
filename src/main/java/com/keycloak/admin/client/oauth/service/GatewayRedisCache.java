@@ -35,10 +35,10 @@ public class GatewayRedisCache {
 	private Long pricingPlanTTL;
 	private Long blockedIpTTL;
 
-	private final ReactiveRedisComponent cacheUtil;
+	private final ReactiveRedisComponent<String> cacheUtil;
 	//private final static String BLOCKED_IPADDRESSES = "blocked_ips";
 
-	public GatewayRedisCache(@Qualifier("redis") ReactiveRedisComponent cacheUtil, Environment environment) {
+	public GatewayRedisCache(@Qualifier("redis") ReactiveRedisComponent<String> cacheUtil, Environment environment) {
 		this.cacheUtil = cacheUtil;
 		this.environment = environment;
 		
@@ -77,39 +77,9 @@ public class GatewayRedisCache {
 	 */
 	public Mono<Long> saveAsBlockedIp(String ipAddr) {
 
-		return cacheUtil.putIfAbsent(ipAddr, Integer.valueOf(0), blockedIpTTL)
+		return cacheUtil.putIfAbsent(ipAddr, String.valueOf(0), blockedIpTTL)
 				.then(cacheUtil.incrementThis(ipAddr));
 		//return cacheUtil.incrementThis(ipAddr);
-	}
-
-	/**
-	 * 
-	 * @param totpSessionId
-	 * @param authResponse
-	 * @return
-	 */
-	public Mono<Boolean> saveAuthenticationResponse(String totpSessionId, AuthenticationResponse authResponse) {
-
-		return cacheUtil.putPojo(totpSessionId, authResponse, totpSessionTTL);
-	}
-
-	/**
-	 * 
-	 * @param totpSessionId
-	 * @return
-	 */
-	public Mono<AuthenticationResponse> getAuthenticationResponse(String totpSessionId) {
-
-		return cacheUtil.getPojo(totpSessionId).flatMap(obj -> Mono.just(Optional.of(obj)))
-				.defaultIfEmpty(Optional.empty()).flatMap(valueOptional -> {
-					if (valueOptional.isPresent()) {
-						AuthenticationResponse authResponse = (AuthenticationResponse) valueOptional.get();
-
-						return Mono.just(authResponse);
-					}
-
-					return Mono.just(new AuthenticationResponse());
-				});
 	}
 
 	/**
@@ -131,7 +101,7 @@ public class GatewayRedisCache {
 	 */
 	public Mono<Long> incrementFailedLogin(String cacheKey) {
 
-		return cacheUtil.putIfAbsent(cacheKey, Integer.valueOf(0)).then(cacheUtil.incrementThis(cacheKey));
+		return cacheUtil.putIfAbsent(cacheKey, String.valueOf(0)).then(cacheUtil.incrementThis(cacheKey));
 	}
 
 	/**

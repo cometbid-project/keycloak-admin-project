@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import static com.keycloak.admin.client.entities.PasswordResetToken.*;
 import static com.keycloak.admin.client.common.geo.GeolocationUtils.*;

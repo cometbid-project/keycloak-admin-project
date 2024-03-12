@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import javax.ws.rs.ClientErrorException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -57,7 +58,7 @@ public class ExceptionHandler {
 	}
 
 	public static <R> Mono<R> processResponse(ClientResponse clientResponse, Class<? extends R> clazzResponse) {
-		HttpStatus status = clientResponse.statusCode();
+		HttpStatusCode status = clientResponse.statusCode();
 
 		Mono<R> respObj = Mono.empty();
 
@@ -79,8 +80,7 @@ public class ExceptionHandler {
 
 				return clientResponse.createException().flatMap(ex -> {
 
-					return raiseServiceExceptionError(clientResponse.statusCode().getReasonPhrase(),
-							clientResponse.rawStatusCode());
+					return raiseServiceExceptionError(clientResponse.statusCode().toString(), clientResponse.statusCode().value());
 				});
 			}
 		}
@@ -98,22 +98,22 @@ public class ExceptionHandler {
 
 		WebClientResponseException wcre = (WebClientResponseException) ex;
 
-		switch (wcre.getStatusCode()) {
+		switch (wcre.getStatusCode().value()) {
 
-		case SERVICE_UNAVAILABLE:
+		case 503: //HttpStatus.SERVICE_UNAVAILABLE:
 
 			return new ServiceUnavailableException(new Object[] { getErrorMessage(wcre) });
-		case BANDWIDTH_LIMIT_EXCEEDED:
+		case 509: //HttpStatus.BANDWIDTH_LIMIT_EXCEEDED:
 
 			return new InvalidRequestException(getErrorMessage(wcre));
-		case INTERNAL_SERVER_ERROR:
+		case 500: //HttpStatus.INTERNAL_SERVER_ERROR:
 
 			return new ServiceUnavailableException(new Object[] { getErrorMessage(wcre) });
 		default:
 			log.warn("Got a unexpected HTTP error: {}, will rethrow it", wcre.getStatusCode());
 			log.warn("Error body: {}", wcre.getResponseBodyAsString());
 
-			return new ServiceException(wcre.getMessage(), wcre.getRawStatusCode());
+			return new ServiceException(wcre.getMessage(), wcre.getStatusCode().value());
 		}
 	}
 
@@ -127,23 +127,23 @@ public class ExceptionHandler {
 
 		WebClientResponseException wcre = (WebClientResponseException) ex;
 
-		switch (wcre.getStatusCode()) {
+		switch (wcre.getStatusCode().value()) {
 
-		case NOT_FOUND:
+		case 404: //HttpStatus.NOT_FOUND
 
 			return new ResourceNotFoundException(new Object[] { getErrorMessage(wcre) });
-		case UNPROCESSABLE_ENTITY:
+		case 422: //HttpStatus.UNPROCESSABLE_ENTITY
 
 			return new InvalidRequestException(getErrorMessage(wcre));
-		case UNAUTHORIZED:
-		case FORBIDDEN:
+		case 401: //HttpStatus.UNAUTHORIZED.value():
+		case 403: //HttpStatus.FORBIDDEN.value():
 
 			return new AuthenticationError(getErrorMessage(wcre));
 		default:
 			log.warn("Got a unexpected HTTP error: {}, will rethrow it", wcre.getStatusCode());
 			log.warn("Error body: {}", wcre.getResponseBodyAsString());
 
-			return new ServiceException(wcre.getMessage(), wcre.getRawStatusCode());
+			return new ServiceException(wcre.getMessage(), wcre.getStatusCode().value());
 		}
 	}
 

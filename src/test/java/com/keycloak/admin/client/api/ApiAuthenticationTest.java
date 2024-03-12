@@ -21,7 +21,7 @@ import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveRepositori
 import org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
-import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
+//import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
@@ -94,7 +94,7 @@ class ApiAuthenticationTest {
 	        MongoReactiveAutoConfiguration.class,
 	        MongoAutoConfiguration.class,
 	        MongoDataAutoConfiguration.class,
-	        EmbeddedMongoAutoConfiguration.class,
+	       // EmbeddedMongoAutoConfiguration.class,
 	        MongoReactiveRepositoriesAutoConfiguration.class,
 	        MongoRepositoriesAutoConfiguration.class
 	})	

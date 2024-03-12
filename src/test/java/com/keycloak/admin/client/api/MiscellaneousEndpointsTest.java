@@ -21,7 +21,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.relaxedRequestParameters;
+//import static org.springframework.restdocs.request.RequestDocumentation.relaxedRequestParameters;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,13 +55,8 @@ import org.springframework.util.Base64Utils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.cometbid.api.merchant.main.IndexController;
-import com.cometbid.api.utils.RandomString;
-import com.cometbid.merchant.base.config.AppConfig;
-import com.cometbid.merchant.base.config.UtilProfile;
-import com.cometbid.project.common.exceptions.handler.GlobalControllerExceptionHandler;
-import com.cometbid.project.common.utils.DateUtil;
 import com.github.javafaker.Faker;
+import com.keycloak.admin.client.error.handlers.GlobalControllerExceptionHandler;
 
 import lombok.extern.log4j.Log4j2;
 

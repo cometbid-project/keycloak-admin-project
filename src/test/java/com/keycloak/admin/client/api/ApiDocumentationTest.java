@@ -36,6 +36,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.keycloak.admin.client.dataacess.UserBuilder;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
