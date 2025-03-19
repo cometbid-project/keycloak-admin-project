@@ -14,10 +14,11 @@ import lombok.NoArgsConstructor;
  * @author Gbenga
  *
  */
+@SuppressWarnings("hiding")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class EmailEvent extends Event<String, EmailValidationDto, EmailType> {
+public class EmailEvent<EmailValidationDto> extends Event<String, EmailValidationDto, EmailType> {
 
 	public EmailEvent(EmailValidationDto emailValidationRequestDto, String eventId, EmailType emailType) {
 		super(emailType, eventId, emailValidationRequestDto);

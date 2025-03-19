@@ -188,6 +188,8 @@ class KeycloakIntegration {
 	@Container
 	protected static final KeycloakContainer keycloakContainer = new KeycloakContainer()
 			.withRealmImportFile("keycloak/realm-export.json")
+			//.useTls()
+			//.useTls("your_custom.crt", "your_custom.key")
 			.withFeaturesEnabled("docker", "impersonation", "scripts", "token-exchange", "admin-fine-grained-authz")
 			.withFeaturesDisabled("authorization");
 
@@ -290,18 +292,20 @@ class KeycloakIntegration {
 		public Keycloak keycloakAdminClientFactory(KeycloakClientSslProperties keycloakSslProps) throws Exception {
 			String startingClientId = keycloakProperties.getAdminClientId();
 			String startingClientSecret = keycloakProperties.getAdminClientSecret();
-			String serverUrl = keycloakContainer.getAuthServerUrl();
+			String authServerUrl = keycloakContainer.getAuthServerUrl();
+			//String adminUsername = keycloakContainer.getAdminUsername();
+			//String adminPassword = keycloakContainer.getAdminPassword();
 			String realm = keycloakProperties.getAppRealm();
 
 			log.info("Keycloak admin clientId...{}", startingClientId);
 			log.info("Keycloak admin client-secret...{}", startingClientSecret);
-			log.info("Keycloak server Url...{}", serverUrl);
+			log.info("Keycloak server Url...{}", authServerUrl);
 			log.info("Keycloak realm...{}", realm);
 
 			// Get keycloak client
 			Keycloak keycloak = KeycloakBuilder.builder()
 					//
-					.serverUrl(serverUrl)
+					.serverUrl(authServerUrl)
 					//
 					.realm(realm)
 					//
@@ -404,7 +408,8 @@ class KeycloakIntegration {
 
 		Mono<AuthenticationResponse> tokenGenerated = keycloakClientService.generateToken(username, targetClientId);
 
-		StepVerifier.create(tokenGenerated).expectNextMatches(p -> StringUtils.isBlank(p.getAccessToken()))
+		StepVerifier.create(tokenGenerated)
+				.expectNextMatches(p -> StringUtils.isBlank(p.getAccessToken()))
 				.verifyComplete();
 	}
 

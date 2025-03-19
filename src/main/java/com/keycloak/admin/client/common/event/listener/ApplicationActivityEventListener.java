@@ -49,6 +49,9 @@ public class ApplicationActivityEventListener implements ApplicationEventListene
 
 		int QUEUE_CAPACITY = appConfig.getEventThreadPoolSize();
 		blockingQueue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
+
+		// starts the executor thread to process Queue
+		beginProcessing();
 	}
 
 	@Override
@@ -59,10 +62,7 @@ public class ApplicationActivityEventListener implements ApplicationEventListene
 
 		// Queue up the event for processing
 		this.blockingQueue.offer(event);
-		
-		//starts the executor thread to process Queue		
-		beginProcessing();
-		
+
 		return Mono.empty();
 	}
 
